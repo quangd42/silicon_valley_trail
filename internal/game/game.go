@@ -1,26 +1,26 @@
 package game
 
 import (
-	"fmt"
-	"io"
-	"os"
+	"github.com/quangd42/silicon_valley_trail/internal/content"
+	"github.com/quangd42/silicon_valley_trail/internal/logic"
+	"github.com/quangd42/silicon_valley_trail/internal/model"
+	"github.com/quangd42/silicon_valley_trail/internal/ui"
+	"github.com/quangd42/silicon_valley_trail/internal/view"
 )
 
-type Game struct {
-	state    string
-	renderer io.Writer
-	store    map[string]string
-}
-
-func NewGame() *Game {
-	return &Game{
-		state:    "this is a brand new game",
-		renderer: os.Stdout,
-		store:    nil,
+func Run(
+	copy *content.Content,
+	r *ui.Terminal,
+	state *model.State,
+) error {
+	standardActions := view.StandardActions()
+	r.RenderIntro(view.IntroView(copy.Intro))
+	for state.CurrentLocation < len(state.Route)-1 {
+		r.RenderDay(view.Day(state))
+		action := r.Prompt(standardActions[:])
+		msg := logic.ApplyAction(state, action)
+		r.RenderInfo(msg)
 	}
-}
-
-func (g *Game) Run() error {
-	fmt.Fprintf(g.renderer, "current state: %s\n", g.state)
+	r.RenderEnding(view.EndingView(copy.Ending))
 	return nil
 }
