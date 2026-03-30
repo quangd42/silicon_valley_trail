@@ -95,6 +95,9 @@ const (
 	ActionRest
 	ActionBuild
 	ActionMarket
+
+	// Sentinel value, holds the count of in-game actions. Mainly useful for testing.
+	ActionCount
 )
 
 type Control string

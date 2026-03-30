@@ -1,8 +1,6 @@
 package program
 
 import (
-	"log"
-
 	"github.com/quangd42/silicon_valley_trail/internal/content"
 	"github.com/quangd42/silicon_valley_trail/internal/logic"
 	"github.com/quangd42/silicon_valley_trail/internal/model"
@@ -30,7 +28,7 @@ func Run(
 			case model.ControlQuitToMenu:
 				quitToMenu(r)
 			default:
-				log.Fatal("invalid in-game control")
+				panic("invalid in-game control")
 			}
 		}
 	}

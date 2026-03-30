@@ -71,11 +71,11 @@ func (t *Terminal) renderControls(v []model.Control, start int) {
 	t.out.Write([]byte{'\n'})
 }
 
-// PromptChoice is the result type of `PromptSelection()`. It is a poor man's tagged union
-// to distinguish if the user has chosen an in-game choice or a game session control action,
-// as we unfortunately have to mix those two in this CLI representation.
+// PromptChoice is the type of the result of `PromptSelection()`. It is a poor man's tagged
+// union, to distinguish if the user has chosen an in-game action or a game session control,
+// as we unfortunately have to mix those two choices in this CLI UI representation.
 // When `Kind` = true, `Action` is set, otherwise `Control` is set. Accessing the unset
-// field does not panic, simply returns the default value.
+// field does not panic, simply returns the default (and wrong) value.
 type PromptChoice struct {
 	Kind    bool // true = Action, false = Control
 	Action  model.Action

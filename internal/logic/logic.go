@@ -44,6 +44,8 @@ func ApplyAction(s *model.State, action model.Action) ActionResult {
 			Coffee: -2,
 			Hype:   10,
 		}
+	default:
+		panic("attempted to apply undefined action")
 	}
 
 	s.Resources.Add(out.Delta)

@@ -12,6 +12,8 @@ type Content struct {
 	Ending  string
 }
 
+// Load returns the structured copy pool for the entire game.
+// Later on it can be improved to orchestrate fetching content from different sources.
 func Load() *Content {
 	return &Content{
 		Intro:   introCopy(),
