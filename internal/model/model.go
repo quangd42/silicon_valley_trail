@@ -79,6 +79,13 @@ const (
 	ActionRest
 	ActionBuild
 	ActionMarket
-	ActionSave
-	ActionQuit
+)
+
+type Control string
+
+const (
+	ControlSave       Control = "Save Game"
+	ControlLoad       Control = "Load Game"
+	ControlQuitToMenu Control = "Quit to Menu"
+	ControlQuitGame   Control = "Quit Game"
 )

@@ -49,44 +49,83 @@ func (t *Terminal) RenderDay(v view.DayView) {
 	t.renderThickSep()
 	t.fmt.Fprintf(t.out, "Weather: %s\n\n", v.Weather)
 	t.renderThinSep()
-	t.out.Write([]byte("What will you do?\n"))
+	t.out.WriteString("What will you do?\n")
 	t.renderThinSep()
 	t.out.Flush()
 }
 
 // renderActions is typically
 func (t *Terminal) renderActions(v []view.ActionView) {
+	t.out.WriteString("Actions:\n")
 	for i, action := range v {
 		t.fmt.Fprintf(t.out, "%d. %s\n", i+1, action.Desc)
 	}
 	t.out.Write([]byte{'\n'})
 }
 
-func (t *Terminal) Prompt(v view.PromptView) model.Action {
+func (t *Terminal) renderControls(v []model.Control, start int) {
+	t.out.WriteString("Controls:\n")
+	for i, control := range v {
+		t.fmt.Fprintf(t.out, "%d. %s\n", i+start+1, control)
+	}
+	t.out.Write([]byte{'\n'})
+}
+
+// PromptChoice is the result type of `PromptSelection()`. It is a poor man's tagged union
+// to distinguish if the user has chosen an in-game choice or a game session control action,
+// as we unfortunately have to mix those two in this CLI representation.
+// When `Kind` = true, `Action` is set, otherwise `Control` is set. Accessing the unset
+// field does not panic, simply returns the default value.
+type PromptChoice struct {
+	Kind    bool // true = Action, false = Control
+	Action  model.Action
+	Control model.Control
+}
+
+func (t *Terminal) PromptSelection(v view.PromptView) PromptChoice {
+	actionCount := len(v.Actions)
+	controlCount := len(v.Controls)
 	t.renderActions(v.Actions)
+	t.renderControls(v.Controls, actionCount)
 	for {
-		t.fmt.Fprintf(t.out, "Enter choice (1-%d): ", len(v.Actions))
+		t.fmt.Fprintf(t.out, "Enter choice (1-%d): ", actionCount+controlCount)
 		t.out.Flush()
 		input, err := t.in.ReadString('\n')
 		if err != nil {
 			// This often means Ctrl-C or some serious unrecoverable error, but we're
 			// attempting to handle it anyway
-			t.out.Write([]byte{'\n'})
+			t.out.WriteByte('\n')
 			continue
 		}
 		choice, err := strconv.Atoi(strings.TrimSpace(input))
-		if err != nil || choice < 1 || choice > len(v.Actions) {
-			t.out.Write([]byte("Invalid input. "))
+		if err != nil {
+			t.out.WriteString("Invalid input. ")
 			continue
 		}
-		return v.Actions[choice-1].Kind
+		switch {
+		case choice >= 1 && choice <= actionCount:
+			return PromptChoice{
+				Kind:   true,
+				Action: v.Actions[choice-1].Kind,
+			}
+		case choice > actionCount && choice <= actionCount+controlCount:
+			return PromptChoice{
+				Kind:    false,
+				Control: v.Controls[choice-1-actionCount],
+			}
+		default:
+			t.out.WriteString("Invalid input. ")
+			continue
+
+		}
 	}
 }
 
 func (t *Terminal) RenderInfo(msg string) {
-	t.out.Write([]byte{'\n'})
-	t.out.Write([]byte(msg))
-	t.out.Write([]byte("Press Enter to continue..."))
+	t.renderThinSep()
+	t.out.WriteString(msg)
+	t.renderThinSep()
+	t.out.WriteString("Press Enter to continue...")
 	t.out.Flush()
 	t.in.ReadString('\n')
 	t.clearScreen()
@@ -99,7 +138,7 @@ func (t *Terminal) RenderEnding(v view.EndingView) {
 
 // print escape sequence to clear terminal screen (\033[2J) and move cursor to top left (\033[H)
 func (t *Terminal) clearScreen() {
-	t.out.Write([]byte("\033[2J\033[H"))
+	t.out.WriteString("\033[2J\033[H")
 }
 
 func (t *Terminal) renderThickSep() {

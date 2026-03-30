@@ -55,7 +55,7 @@ func actions() map[model.Action]ActionCopy {
 		},
 		model.ActionRest: {
 			Desc:   "Rest and recover (restore morale, use coffee)",
-			Result: "You decided to take a break...\n\nYou're rested, and filled with determination.\n\n",
+			Result: "You decided to take a break...\n\n...\n\nYou're filled with determination.\n\n",
 		},
 		model.ActionBuild: {
 			Desc:   "Work on product (reduce bugs, use coffee)",
@@ -64,12 +64,6 @@ func actions() map[model.Action]ActionCopy {
 		model.ActionMarket: {
 			Desc:   "Marketing push (increase hype, costs money)",
 			Result: "You launch a marketing campaign...\n\nEvery \"debate\" on X is about your product...\n(Hype increased. Cost $%d)\n\n",
-		},
-		model.ActionSave: {
-			Desc: "Save game",
-		},
-		model.ActionQuit: {
-			Desc: "Quit to menu",
 		},
 	}
 }
