@@ -1,4 +1,4 @@
-package game
+package program
 
 import (
 	"github.com/quangd42/silicon_valley_trail/internal/content"
@@ -9,18 +9,17 @@ import (
 )
 
 func Run(
-	copy *content.Content,
+	cont *content.Content,
 	r *ui.Terminal,
 	state *model.State,
 ) error {
-	standardActions := view.StandardActions()
-	r.RenderIntro(view.IntroView(copy.Intro))
+	r.RenderIntro(view.IntroView(cont.Intro))
 	for state.CurrentLocation < len(state.Route)-1 {
 		r.RenderDay(view.Day(state))
-		action := r.Prompt(standardActions[:])
-		msg := logic.ApplyAction(state, action)
-		r.RenderInfo(msg)
+		action := r.Prompt(view.Prompt(cont))
+		res := logic.ApplyAction(state, cont, action)
+		r.RenderInfo(res.Msg)
 	}
-	r.RenderEnding(view.EndingView(copy.Ending))
+	r.RenderEnding(view.EndingView(cont.Ending))
 	return nil
 }

@@ -2,50 +2,63 @@ package logic
 
 import (
 	"fmt"
+	"log"
 
+	"github.com/quangd42/silicon_valley_trail/internal/content"
 	"github.com/quangd42/silicon_valley_trail/internal/model"
 )
 
-func ApplyAction(s *model.State, a model.ActionKind) string {
+type ActionResult struct {
+	Msg string
+}
+
+func ApplyAction(s *model.State, cont *content.Content, a model.Action) ActionResult {
 	// TODO: Render game story messages based on Location
 	// delta calculated based on Location
 	// delta impacted by weather
 	// calculate game winning or losing
 	var delta actionDelta
-	var msg string
+	var msgArgs []any
+	res := ActionResult{}
+	teamSize := len(s.Party.Members)
 	switch a {
 	case model.ActionTravel:
 		s.CurrentLocation += 1
 		delta = actionDelta{
-			Cash:   -100 * len(s.Party.Members),
-			Coffee: -(s.Resources.Coffee / 10),
-			Morale: -(s.Resources.Morale / 20),
+			Cash:   -100 * teamSize,
+			Coffee: -2 * teamSize,
+			Morale: -5,
 		}
-		msg = fmt.Sprintf("Your team hit the road...\n\nArrived at %s!\n\n", s.Route[s.CurrentLocation].Name)
+		msgArgs = []any{s.Route[s.CurrentLocation].Name}
 	case model.ActionRest:
 		delta = actionDelta{
-			Cash:   -200 * len(s.Party.Members),
-			Coffee: s.Resources.Coffee / 20,
-			Morale: s.Resources.Morale / 10,
+			Cash:   -200 * teamSize,
+			Coffee: 10,
+			Morale: 10,
 		}
-		msg = "You decided to take a break.\n\nYou're filled with determination.\n\n"
 	case model.ActionBuild:
 		delta = actionDelta{
-			Coffee:    -(s.Resources.Coffee / 5),
-			Morale:    -(s.Resources.Morale / 20),
+			Coffee:    -3 * teamSize,
+			Morale:    -5,
 			Readiness: 10,
 		}
-		msg = "You take on the next item on the roadmap...\n\nYou're happy with the result, but everyone is tired...\n\n"
+		msgArgs = []any{delta.Readiness, -delta.Coffee, -delta.Morale}
 	case model.ActionMarket:
 		delta = actionDelta{
 			Cash: -2000,
-			Hype: s.Resources.Morale / 10,
+			Hype: 10,
 		}
-		msg = "You launch a marketing campaign...\n\nEvery startup in CA is talking about you...(Hype increased. Cost $2,000)\n\n"
+		msgArgs = []any{-delta.Cash}
 	}
+
+	actionCopy, ok := cont.Actions[a]
+	if !ok {
+		log.Fatalf("missing copy for action id %d", a)
+	}
+	res.Msg = fmt.Sprintf(actionCopy.Result, msgArgs...)
 	applyActionDelta(s, delta)
 	s.Day += 1
-	return msg
+	return res
 }
 
 type actionDelta = model.Resources

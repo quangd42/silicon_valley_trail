@@ -1,5 +1,7 @@
 package ui
 
+// Implementation note: ALWAYS flush at the end of public `Render*` method!
+
 import (
 	"bufio"
 	"io"
@@ -19,26 +21,23 @@ var (
 
 type Terminal struct {
 	in  *bufio.Reader
-	out io.Writer
+	out *bufio.Writer
 	fmt *message.Printer
 }
 
 func NewTerminal(in io.Reader, out io.Writer) *Terminal {
 	return &Terminal{
 		in:  bufio.NewReader(in),
-		out: out,
+		out: bufio.NewWriter(out),
 		fmt: message.NewPrinter(language.English),
 	}
 }
 
 func (t *Terminal) RenderIntro(v view.IntroView) {
-	t.fmt.Fprint(t.out, v)
+	t.RenderInfo(string(v))
 }
 
 func (t *Terminal) RenderDay(v view.DayView) {
-	// Really hacky way to clear the screen on each day:
-	// print escape sequence to clear screen (\033[2J) and move cursor to top left (\033[H)
-	t.out.Write([]byte("\033[2J\033[H"))
 	t.renderThickSep()
 	t.fmt.Fprintf(t.out, "Day %d | %s\n", v.Day, v.Location.Name)
 	t.fmt.Fprintf(t.out, "%s\n", v.Location.Desc)
@@ -52,44 +51,55 @@ func (t *Terminal) RenderDay(v view.DayView) {
 	t.renderThinSep()
 	t.out.Write([]byte("What will you do?\n"))
 	t.renderThinSep()
+	t.out.Flush()
 }
 
-func (t *Terminal) renderActions(actions []model.ActionKind) {
-	for i, action := range actions {
-		t.fmt.Fprintf(t.out, "%d. %s\n", i+1, action)
+// renderActions is typically
+func (t *Terminal) renderActions(v []view.ActionView) {
+	for i, action := range v {
+		t.fmt.Fprintf(t.out, "%d. %s\n", i+1, action.Desc)
 	}
 	t.out.Write([]byte{'\n'})
 }
 
-func (t *Terminal) Prompt(actions []model.ActionKind) model.ActionKind {
-	t.renderActions(actions)
+func (t *Terminal) Prompt(v view.PromptView) model.Action {
+	t.renderActions(v.Actions)
 	for {
-		t.fmt.Fprintf(t.out, "Enter choice (1-%d): ", len(actions))
+		t.fmt.Fprintf(t.out, "Enter choice (1-%d): ", len(v.Actions))
+		t.out.Flush()
 		input, err := t.in.ReadString('\n')
 		if err != nil {
-			// Only if for some reason the user forces input without typing '\n'
+			// This often means Ctrl-C or some serious unrecoverable error, but we're
+			// attempting to handle it anyway
 			t.out.Write([]byte{'\n'})
 			continue
 		}
 		choice, err := strconv.Atoi(strings.TrimSpace(input))
-		if err != nil {
+		if err != nil || choice < 1 || choice > len(v.Actions) {
 			t.out.Write([]byte("Invalid input. "))
 			continue
 		}
-		if choice < 1 || choice > len(actions) {
-			continue
-		}
-		return actions[choice-1]
+		return v.Actions[choice-1].Kind
 	}
 }
 
 func (t *Terminal) RenderInfo(msg string) {
 	t.out.Write([]byte{'\n'})
 	t.out.Write([]byte(msg))
+	t.out.Write([]byte("Press Enter to continue..."))
+	t.out.Flush()
+	t.in.ReadString('\n')
+	t.clearScreen()
 }
 
 func (t *Terminal) RenderEnding(v view.EndingView) {
 	t.fmt.Fprint(t.out, v)
+	t.out.Flush()
+}
+
+// print escape sequence to clear terminal screen (\033[2J) and move cursor to top left (\033[H)
+func (t *Terminal) clearScreen() {
+	t.out.Write([]byte("\033[2J\033[H"))
 }
 
 func (t *Terminal) renderThickSep() {

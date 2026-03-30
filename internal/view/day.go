@@ -21,14 +21,3 @@ func Day(s *model.State) DayView {
 		Weather:   s.Weather,
 	}
 }
-
-func StandardActions() [6]model.ActionKind {
-	return [6]model.ActionKind{
-		model.ActionTravel,
-		model.ActionRest,
-		model.ActionBuild,
-		model.ActionMarket,
-		model.ActionSave,
-		model.ActionQuit,
-	}
-}

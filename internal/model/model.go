@@ -71,3 +71,14 @@ const (
 	WeatherHot    WeatherKind = "heat"
 	WeatherCloudy WeatherKind = "cloudy"
 )
+
+type Action int
+
+const (
+	ActionTravel Action = iota
+	ActionRest
+	ActionBuild
+	ActionMarket
+	ActionSave
+	ActionQuit
+)
