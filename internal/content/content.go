@@ -6,7 +6,7 @@ package content
 import "github.com/quangd42/silicon_valley_trail/internal/model"
 
 type Content struct {
-	Intro   string
+	Intro   []string
 	Route   []model.Location
 	Actions map[model.Action]ActionCopy
 	Ending  string
@@ -23,15 +23,25 @@ func Load() *Content {
 	}
 }
 
-func introCopy() string {
-	return `Welcome to Silicon Valley Trail!
+func introCopy() []string {
+	return []string{
+		`Welcome to Silicon Valley Trail!
 
-You and your best bud Pete set out from your HQ in San Jose to San Francisco to attend a major investor meeting.
-Your product: a sleeping mask that lets people relive childhood memories through dreams.
+You and your best bud Pete set out from your HQ in San Jose to San Francisco to attend a
+major investor meeting. Your product: a sleeping mask that lets people relive childhood
+memories through dreams.
 
 Will you be able to impress the investors?
-
-`
+`,
+		`
+Manage your resources wisely:
+* Cash    ($)   : Don’t run out. No cash = game over.
+* Morale  (%)   : Keep the team motivated.
+* Coffee  (cups): Your startup fuel. 2 days without it = game over.
+* Product (%)   : How ready your product is. Directly affects your odds of getting signed.
+* Hype    (%)   : Public interest in your startup. Every 2 Hype = 1 Product.
+`,
+	}
 }
 
 func endingCopy() string {

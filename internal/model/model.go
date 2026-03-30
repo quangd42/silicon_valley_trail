@@ -106,5 +106,6 @@ const (
 	ControlSave       Control = "Save Game"
 	ControlLoad       Control = "Load Game"
 	ControlQuitToMenu Control = "Quit to Menu"
+	ControlNewGame    Control = "New Game"
 	ControlQuitGame   Control = "Quit Game"
 )

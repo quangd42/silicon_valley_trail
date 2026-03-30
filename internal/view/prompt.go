@@ -11,8 +11,10 @@ type ActionView struct {
 }
 
 type PromptView struct {
-	Actions  []ActionView
-	Controls []model.Control
+	Actions       []ActionView
+	ActionsLabel  string
+	Controls      []model.Control
+	ControlsLabel string
 }
 
 func InGamePrompt(cont *content.Content) PromptView {
@@ -23,9 +25,11 @@ func InGamePrompt(cont *content.Content) PromptView {
 			{Kind: model.ActionBuild, Desc: cont.Actions[model.ActionBuild].Desc},
 			{Kind: model.ActionMarket, Desc: cont.Actions[model.ActionMarket].Desc},
 		},
+		ActionsLabel: "Actions:\n",
 		Controls: []model.Control{
 			model.ControlSave,
 			model.ControlQuitToMenu,
 		},
+		ControlsLabel: "Controls:\n",
 	}
 }

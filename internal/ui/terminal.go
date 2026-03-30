@@ -33,42 +33,53 @@ func NewTerminal(in io.Reader, out io.Writer) *Terminal {
 	}
 }
 
+func (t *Terminal) RenderMainMenu(v view.PromptView) PromptChoice {
+	t.thickSep()
+	t.out.WriteString("SILICON VALLEY TRAIL - Main Menu\n")
+	t.thickSep()
+	return t.PromptSelection(v)
+}
+
 func (t *Terminal) RenderIntro(v view.IntroView) {
-	t.RenderInfo(string(v))
+	t.renderNarrative(v)
+	t.thinSep()
+	t.out.WriteString("Press Enter to begin your journey!\n")
+	t.thinSep()
+	t.out.Flush()
+	t.in.ReadString('\n')
 }
 
 func (t *Terminal) RenderDay(v view.DayView) {
-	t.renderThickSep()
+	t.thickSep()
 	t.fmt.Fprintf(t.out, "Day %d | %s\n", v.Day, v.Location.Name)
 	t.fmt.Fprintf(t.out, "%s\n", v.Location.Desc)
-	t.renderThickSep()
+	t.thickSep()
 	r := v.Resources
 	t.fmt.Fprintf(t.out, "Cash: $%d | Morale: %d%% | Coffee: %d\n", r.Cash, r.Morale, r.Coffee)
 	t.fmt.Fprintf(t.out, "Hype: %d%% | Readiness: %d%%\n", r.Hype, r.Readiness)
 	t.fmt.Fprintf(t.out, "Progress: %d%% to San Francisco\n", v.Progress)
-	t.renderThickSep()
+	t.thickSep()
 	t.fmt.Fprintf(t.out, "Weather: %s\n\n", v.Weather)
-	t.renderThinSep()
+	t.thinSep()
 	t.out.WriteString("What will you do?\n")
-	t.renderThinSep()
+	t.thinSep()
 	t.out.Flush()
 }
 
-// renderActions is typically
-func (t *Terminal) renderActions(v []view.ActionView) {
-	t.out.WriteString("Actions:\n")
+func (t *Terminal) renderActions(v []view.ActionView, label string) {
+	t.out.WriteString(label)
 	for i, action := range v {
 		t.fmt.Fprintf(t.out, "%d. %s\n", i+1, action.Desc)
 	}
-	t.out.Write([]byte{'\n'})
+	t.linefeed()
 }
 
-func (t *Terminal) renderControls(v []model.Control, start int) {
-	t.out.WriteString("Controls:\n")
+func (t *Terminal) renderControls(v []model.Control, label string, start int) {
+	t.out.WriteString(label)
 	for i, control := range v {
 		t.fmt.Fprintf(t.out, "%d. %s\n", i+start+1, control)
 	}
-	t.out.Write([]byte{'\n'})
+	t.linefeed()
 }
 
 // PromptChoice is the type of the result of `PromptSelection()`. It is a poor man's tagged
@@ -85,16 +96,24 @@ type PromptChoice struct {
 func (t *Terminal) PromptSelection(v view.PromptView) PromptChoice {
 	actionCount := len(v.Actions)
 	controlCount := len(v.Controls)
-	t.renderActions(v.Actions)
-	t.renderControls(v.Controls, actionCount)
+	if actionCount > 0 {
+		t.renderActions(v.Actions, v.ActionsLabel)
+	}
+	if controlCount > 0 {
+		t.renderControls(v.Controls, v.ControlsLabel, actionCount)
+	}
+	totalCount := actionCount + controlCount
+	if totalCount == 0 {
+		panic("prompt view has no choice to render")
+	}
 	for {
-		t.fmt.Fprintf(t.out, "Enter choice (1-%d): ", actionCount+controlCount)
+		t.fmt.Fprintf(t.out, "Enter choice (1-%d): ", totalCount)
 		t.out.Flush()
 		input, err := t.in.ReadString('\n')
 		if err != nil {
 			// This often means Ctrl-C or some serious unrecoverable error, but we're
 			// attempting to handle it anyway
-			t.out.WriteByte('\n')
+			t.linefeed()
 			continue
 		}
 		choice, err := strconv.Atoi(strings.TrimSpace(input))
@@ -116,7 +135,6 @@ func (t *Terminal) PromptSelection(v view.PromptView) PromptChoice {
 		default:
 			t.out.WriteString("Invalid input. ")
 			continue
-
 		}
 	}
 }
@@ -168,20 +186,29 @@ func (t *Terminal) renderNarrative(v []string) {
 }
 
 func (t *Terminal) RenderActionResult(v view.ActionResultView) {
-	t.renderThinSep()
+	t.thinSep()
 	t.renderNarrative(v.Narative)
 	t.renderImpact(v.LocationName, v.Delta)
-	t.renderThinSep()
+	t.thinSep()
 	t.waitForEnter()
-	t.clearScreen()
+	t.ClearScreen()
 }
 
 func (t *Terminal) RenderInfo(msg string) {
-	t.renderThinSep()
+	t.thinSep()
 	t.out.WriteString(msg)
-	t.renderThinSep()
+	t.linefeed()
+	t.thinSep()
 	t.waitForEnter()
-	t.clearScreen()
+	t.ClearScreen()
+}
+
+func (t *Terminal) RenderInfoNoWait(msg string) {
+	t.thinSep()
+	t.out.WriteString(msg)
+	t.linefeed()
+	t.thinSep()
+	t.out.Flush()
 }
 
 func (t *Terminal) RenderEnding(v view.EndingView) {
@@ -195,9 +222,10 @@ func (t *Terminal) waitForEnter() {
 	t.in.ReadString('\n')
 }
 
-// print escape sequence to clear terminal screen (\033[2J) and move cursor to top left (\033[H)
-func (t *Terminal) clearScreen() {
+// ClearScreen prints escape sequence to clear terminal screen (\033[2J) and move cursor to top left (\033[H)
+func (t *Terminal) ClearScreen() {
 	t.out.WriteString("\033[2J\033[H")
+	t.out.Flush()
 }
 
 // print escape sequence to move cursor up (\033[A) and clear entire line (\033[2K)
@@ -205,12 +233,16 @@ func (t *Terminal) clearLine() {
 	t.out.WriteString("\033[A\033[2K")
 }
 
-func (t *Terminal) renderThickSep() {
+func (t *Terminal) thickSep() {
 	t.out.Write(thickSep)
-	t.out.Write([]byte{'\n'})
+	t.linefeed()
 }
 
-func (t *Terminal) renderThinSep() {
+func (t *Terminal) thinSep() {
 	t.out.Write(thinSep)
-	t.out.Write([]byte{'\n'})
+	t.linefeed()
+}
+
+func (t *Terminal) linefeed() {
+	t.out.WriteByte('\n')
 }

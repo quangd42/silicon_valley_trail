@@ -2,6 +2,7 @@ package program
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/quangd42/silicon_valley_trail/internal/content"
 	"github.com/quangd42/silicon_valley_trail/internal/logic"
@@ -12,47 +13,101 @@ import (
 )
 
 func Run(
-	r *ui.Terminal,
-	s save.Saver,
+	renderer *ui.Terminal,
+	saver save.Saver,
+	cont *content.Content,
+) {
+	for {
+		selection := renderer.RenderMainMenu(view.MainMenu())
+		if selection.Kind {
+			panic("in-game action on main menu")
+		}
+		switch selection.Control {
+		case model.ControlNewGame:
+			newGame(renderer, saver, cont)
+		case model.ControlLoad:
+			loadGame(renderer, saver, cont)
+		case model.ControlQuitGame:
+			quitGame(renderer)
+		default:
+			panic("invalid game session control on main menu")
+		}
+	}
+}
+
+func startGame(
+	rndr *ui.Terminal,
+	saver save.Saver,
 	cont *content.Content,
 	state *model.State,
-) error {
-	r.RenderIntro(view.IntroView(cont.Intro))
-
+	new bool,
+) {
+	rndr.ClearScreen()
+	if new {
+		rndr.RenderIntro(view.IntroView(cont.Intro))
+		rndr.ClearScreen()
+	}
 	for state.CurrentLocation < len(state.Route)-1 {
-		r.RenderDay(view.Day(state))
-		selection := r.PromptSelection(view.InGamePrompt(cont))
+		rndr.RenderDay(view.Day(state))
+		selection := rndr.PromptSelection(view.InGamePrompt(cont))
 		if selection.Kind {
 			res := logic.ApplyAction(state, selection.Action)
-			r.RenderActionResult(view.ActionResult(res, cont))
+			rndr.RenderActionResult(view.ActionResult(res, cont))
 		} else {
 			switch selection.Control {
 			case model.ControlSave:
-				saveGame(r, s, state)
+				saveGame(rndr, saver, state)
 			case model.ControlQuitToMenu:
-				quitToMenu(r)
+				// simply return from the game loop because we're
+				// already in the main menu loop
+				rndr.ClearScreen()
+				return
 			default:
-				panic("invalid in-game control")
+				panic("invalid game session control")
 			}
 		}
 	}
-	r.RenderEnding(view.EndingView(cont.Ending))
+	rndr.RenderEnding(view.EndingView(cont.Ending))
+}
+
+func newGame(
+	rndr *ui.Terminal,
+	saver save.Saver,
+	cont *content.Content,
+) {
+	state := model.NewState(content.DefaultRoute())
+	startGame(rndr, saver, cont, state, true)
+}
+
+func loadGame(
+	rndr *ui.Terminal,
+	saver save.Saver,
+	cont *content.Content,
+) error {
+	var state model.State
+	err := saver.Load(&state)
+	if err != nil {
+		rndr.RenderInfo(fmt.Sprintf("Failed to load game: %s", err.Error()))
+		return err
+	}
+	startGame(rndr, saver, cont, &state, false)
 	return nil
 }
 
-func saveGame(r *ui.Terminal, s save.Saver, state *model.State) {
-	// Save state
-	err := s.Save(state)
+func saveGame(
+	rndr *ui.Terminal,
+	saver save.Saver,
+	state *model.State,
+) {
+	err := saver.Save(state)
 	if err != nil {
-		r.RenderInfo(fmt.Sprintf("Failed to save game: %s\n", err.Error()))
+		rndr.RenderInfo(fmt.Sprintf("Failed to save game: %s", err.Error()))
 		return
 	}
-	// Render info
-	r.RenderInfo("Game saved.\n")
+	rndr.RenderInfo("Game saved.")
 }
 
-func quitToMenu(r *ui.Terminal) {
-	// Render Intro menu
-	// PromptSelection
-	r.RenderInfo("Menu here.\n")
+func quitGame(rndr *ui.Terminal) {
+	rndr.RenderInfoNoWait("Bye!")
+	os.Exit(0)
 }
