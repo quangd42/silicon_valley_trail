@@ -31,3 +31,4 @@ go.work.sum
 .zed/
 
 docs/notes/
+svt_save.json

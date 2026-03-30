@@ -1,16 +1,20 @@
 package program
 
 import (
+	"fmt"
+
 	"github.com/quangd42/silicon_valley_trail/internal/content"
 	"github.com/quangd42/silicon_valley_trail/internal/logic"
 	"github.com/quangd42/silicon_valley_trail/internal/model"
+	"github.com/quangd42/silicon_valley_trail/internal/save"
 	"github.com/quangd42/silicon_valley_trail/internal/ui"
 	"github.com/quangd42/silicon_valley_trail/internal/view"
 )
 
 func Run(
-	cont *content.Content,
 	r *ui.Terminal,
+	s save.Saver,
+	cont *content.Content,
 	state *model.State,
 ) error {
 	r.RenderIntro(view.IntroView(cont.Intro))
@@ -24,7 +28,7 @@ func Run(
 		} else {
 			switch selection.Control {
 			case model.ControlSave:
-				saveGame(r, state)
+				saveGame(r, s, state)
 			case model.ControlQuitToMenu:
 				quitToMenu(r)
 			default:
@@ -36,9 +40,13 @@ func Run(
 	return nil
 }
 
-func saveGame(r *ui.Terminal, state *model.State) {
+func saveGame(r *ui.Terminal, s save.Saver, state *model.State) {
 	// Save state
-	_ = state
+	err := s.Save(state)
+	if err != nil {
+		r.RenderInfo(fmt.Sprintf("Failed to save game: %s\n", err.Error()))
+		return
+	}
 	// Render info
 	r.RenderInfo("Game saved.\n")
 }

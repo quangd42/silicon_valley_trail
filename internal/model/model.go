@@ -1,12 +1,12 @@
 package model
 
 type State struct {
-	Day             int
-	Route           []Location
-	CurrentLocation int
-	Resources       Resources
-	Party           Party
-	Weather         WeatherKind
+	Day             int         `json:"day"`
+	Route           []Location  `json:"route"`
+	CurrentLocation int         `json:"current_location"`
+	Resources       Resources   `json:"resources"`
+	Party           Party       `json:"party"`
+	Weather         WeatherKind `json:"weather"`
 }
 
 func NewState(route []Location) *State {
@@ -20,19 +20,19 @@ func NewState(route []Location) *State {
 }
 
 type Location struct {
-	ID        string
-	Name      string
-	Desc      string
-	Latitude  float64
-	Longitude float64
+	ID        string  `json:"id"`
+	Name      string  `json:"name"`
+	Desc      string  `json:"desc"`
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
 }
 
 type Resources struct {
-	Cash      int // dollar
-	Morale    int // percent
-	Coffee    int // cup
-	Hype      int // percent
-	Readiness int // percent
+	Cash      int `json:"cash"`      // dollar
+	Morale    int `json:"morale"`    // percent
+	Coffee    int `json:"coffee"`    // cup
+	Hype      int `json:"hype"`      // percent
+	Readiness int `json:"readiness"` // percent
 }
 
 func defaultResources() Resources {
@@ -62,7 +62,7 @@ func addClamped(a, b int) int {
 }
 
 type Party struct {
-	Members []PartyMember
+	Members []PartyMember `json:"members"`
 }
 
 func defaultParty() Party {
@@ -75,7 +75,7 @@ func defaultParty() Party {
 }
 
 type PartyMember struct {
-	Name string
+	Name string `json:"name"`
 }
 
 type WeatherKind string
