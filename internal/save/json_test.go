@@ -19,11 +19,11 @@ func TestJSONSaverRoundTrip(t *testing.T) {
 	state.Day = 4
 	state.CurrentLocation = 3
 	state.Resources = model.Resources{
-		Cash:      8_250,
-		Morale:    65,
-		Coffee:    14,
-		Hype:      22,
-		Readiness: 31,
+		Cash:    8_250,
+		Morale:  65,
+		Coffee:  14,
+		Hype:    22,
+		Product: 31,
 	}
 	state.Party = model.Party{
 		Members: []model.PartyMember{
@@ -82,22 +82,22 @@ func TestJSONSaverSaveOverwrites(t *testing.T) {
 	first.Day = 1
 	first.CurrentLocation = 1
 	first.Resources = model.Resources{
-		Cash:      9_500,
-		Morale:    90,
-		Coffee:    25,
-		Hype:      15,
-		Readiness: 23,
+		Cash:    9_500,
+		Morale:  90,
+		Coffee:  25,
+		Hype:    15,
+		Product: 23,
 	}
 
 	second := model.NewState(content.DefaultRoute())
 	second.Day = 8
 	second.CurrentLocation = 4
 	second.Resources = model.Resources{
-		Cash:      5_200,
-		Morale:    47,
-		Coffee:    11,
-		Hype:      34,
-		Readiness: 41,
+		Cash:    5_200,
+		Morale:  47,
+		Coffee:  11,
+		Hype:    34,
+		Product: 41,
 	}
 	second.Weather = model.WeatherRainy
 

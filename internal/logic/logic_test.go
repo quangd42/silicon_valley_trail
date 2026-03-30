@@ -25,11 +25,11 @@ func TestApplyAction(t *testing.T) {
 				},
 				CurrentLocation: 0,
 				Resources: model.Resources{
-					Cash:      10_000,
-					Morale:    100,
-					Coffee:    30,
-					Hype:      10,
-					Readiness: 20,
+					Cash:    10_000,
+					Morale:  100,
+					Coffee:  30,
+					Hype:    10,
+					Product: 20,
 				},
 				Party: model.Party{
 					Members: []model.PartyMember{{Name: "You"}, {Name: "Pete"}},
@@ -49,11 +49,11 @@ func TestApplyAction(t *testing.T) {
 				},
 				CurrentLocation: 1,
 				Resources: model.Resources{
-					Cash:      9_700,
-					Morale:    95,
-					Coffee:    26,
-					Hype:      10,
-					Readiness: 20,
+					Cash:    9_700,
+					Morale:  95,
+					Coffee:  26,
+					Hype:    10,
+					Product: 20,
 				},
 				Party: model.Party{
 					Members: []model.PartyMember{{Name: "You"}, {Name: "Pete"}},
@@ -69,11 +69,11 @@ func TestApplyAction(t *testing.T) {
 				},
 				CurrentLocation: 0,
 				Resources: model.Resources{
-					Cash:      1_000,
-					Morale:    40,
-					Coffee:    2,
-					Hype:      10,
-					Readiness: 20,
+					Cash:    1_000,
+					Morale:  40,
+					Coffee:  2,
+					Hype:    10,
+					Product: 20,
 				},
 				Party: model.Party{
 					Members: []model.PartyMember{{Name: "You"}, {Name: "Pete"}, {Name: "Mina"}},
@@ -91,11 +91,11 @@ func TestApplyAction(t *testing.T) {
 				},
 				CurrentLocation: 0,
 				Resources: model.Resources{
-					Cash:      100,
-					Morale:    50,
-					Coffee:    12,
-					Hype:      10,
-					Readiness: 20,
+					Cash:    100,
+					Morale:  50,
+					Coffee:  12,
+					Hype:    10,
+					Product: 20,
 				},
 				Party: model.Party{
 					Members: []model.PartyMember{{Name: "You"}, {Name: "Pete"}, {Name: "Mina"}},
@@ -111,11 +111,11 @@ func TestApplyAction(t *testing.T) {
 				},
 				CurrentLocation: 0,
 				Resources: model.Resources{
-					Cash:      4_000,
-					Morale:    60,
-					Coffee:    9,
-					Hype:      12,
-					Readiness: 30,
+					Cash:    4_000,
+					Morale:  60,
+					Coffee:  9,
+					Hype:    12,
+					Product: 30,
 				},
 				Party: model.Party{
 					Members: []model.PartyMember{{Name: "You"}, {Name: "Pete"}},
@@ -124,7 +124,7 @@ func TestApplyAction(t *testing.T) {
 			action: model.ActionBuild,
 			want: ActionResult{
 				Action: model.ActionBuild,
-				Delta:  model.Resources{Coffee: -8, Morale: -5, Readiness: 6},
+				Delta:  model.Resources{Coffee: -8, Morale: -5, Product: 6},
 			},
 			wantState: model.State{
 				Day: 6,
@@ -133,11 +133,11 @@ func TestApplyAction(t *testing.T) {
 				},
 				CurrentLocation: 0,
 				Resources: model.Resources{
-					Cash:      4_000,
-					Morale:    55,
-					Coffee:    1,
-					Hype:      12,
-					Readiness: 36,
+					Cash:    4_000,
+					Morale:  55,
+					Coffee:  1,
+					Hype:    12,
+					Product: 36,
 				},
 				Party: model.Party{
 					Members: []model.PartyMember{{Name: "You"}, {Name: "Pete"}},
@@ -153,11 +153,11 @@ func TestApplyAction(t *testing.T) {
 				},
 				CurrentLocation: 0,
 				Resources: model.Resources{
-					Cash:      1_500,
-					Morale:    80,
-					Coffee:    7,
-					Hype:      15,
-					Readiness: 25,
+					Cash:    1_500,
+					Morale:  80,
+					Coffee:  7,
+					Hype:    15,
+					Product: 25,
 				},
 				Party: model.Party{
 					Members: []model.PartyMember{{Name: "You"}, {Name: "Pete"}},
@@ -175,11 +175,11 @@ func TestApplyAction(t *testing.T) {
 				},
 				CurrentLocation: 0,
 				Resources: model.Resources{
-					Cash:      0,
-					Morale:    80,
-					Coffee:    5,
-					Hype:      25,
-					Readiness: 25,
+					Cash:    0,
+					Morale:  80,
+					Coffee:  5,
+					Hype:    25,
+					Product: 25,
 				},
 				Party: model.Party{
 					Members: []model.PartyMember{{Name: "You"}, {Name: "Pete"}},
@@ -197,6 +197,155 @@ func TestApplyAction(t *testing.T) {
 			}
 			if !reflect.DeepEqual(tc.state, tc.wantState) {
 				t.Fatalf("ApplyAction() state = %#v, want %#v", tc.state, tc.wantState)
+			}
+		})
+	}
+}
+
+func TestApplyAction_NoCoffeeDayCount(t *testing.T) {
+	tests := []struct {
+		name                 string
+		state                model.State
+		action               model.Action
+		wantNoCoffeeDayCount int
+	}{
+		{
+			name: "increments no-coffee counter when coffee reaches zero",
+			state: model.State{
+				Route: []model.Location{{Name: "San Jose"}},
+				Resources: model.Resources{
+					Cash:    4_000,
+					Morale:  60,
+					Coffee:  4,
+					Hype:    10,
+					Product: 20,
+				},
+				Party: model.Party{
+					Members: []model.PartyMember{{Name: "You"}},
+				},
+			},
+			action:               model.ActionBuild,
+			wantNoCoffeeDayCount: 1,
+		},
+		{
+			name: "resets no-coffee counter when coffee is restored",
+			state: model.State{
+				Route: []model.Location{{Name: "San Jose"}},
+				Resources: model.Resources{
+					Cash:    4_000,
+					Morale:  60,
+					Coffee:  0,
+					Hype:    10,
+					Product: 20,
+				},
+				Party: model.Party{
+					Members: []model.PartyMember{{Name: "You"}, {Name: "Pete"}},
+				},
+				NoCoffeeDayCount: 1,
+			},
+			action:               model.ActionRest,
+			wantNoCoffeeDayCount: 0,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ApplyAction(&tc.state, tc.action)
+			if tc.state.NoCoffeeDayCount != tc.wantNoCoffeeDayCount {
+				t.Fatalf("NoCoffeeDayCount = %d, want %d", tc.state.NoCoffeeDayCount, tc.wantNoCoffeeDayCount)
+			}
+		})
+	}
+}
+
+func TestEvaluateEnding(t *testing.T) {
+	tests := []struct {
+		name  string
+		state model.State
+		want  Ending
+	}{
+		{
+			name: "returns none while run is still valid",
+			state: model.State{
+				Resources:        model.Resources{Cash: 100, Coffee: 5},
+				NoCoffeeDayCount: 1,
+			},
+			want: EndingNone,
+		},
+		{
+			name: "returns no coffee after two zero-coffee days",
+			state: model.State{
+				Resources:        model.Resources{Cash: 100, Coffee: 0},
+				NoCoffeeDayCount: 2,
+			},
+			want: EndingNoCoffee,
+		},
+		{
+			name: "returns no cash when cash is depleted",
+			state: model.State{
+				Resources:        model.Resources{Cash: 0, Coffee: 5},
+				NoCoffeeDayCount: 0,
+			},
+			want: EndingNoCash,
+		},
+		{
+			name: "no cash takes precedence over no coffee",
+			state: model.State{
+				Resources:        model.Resources{Cash: 0, Coffee: 0},
+				NoCoffeeDayCount: 2,
+			},
+			want: EndingNoCash,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := EvaluateEnding(&tc.state)
+			if got != tc.want {
+				t.Fatalf("EvaluateEnding() = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestResolveFinalPitch(t *testing.T) {
+	tests := []struct {
+		name  string
+		state model.State
+		roll  int
+		want  Ending
+	}{
+		{
+			name: "loses when threshold is zero",
+			state: model.State{
+				Resources: model.Resources{Product: 0, Hype: 0},
+			},
+			roll: 0,
+			want: EndingNoOffer,
+		},
+		{
+			name: "wins when roll is below threshold",
+			state: model.State{
+				Resources: model.Resources{Product: 40, Hype: 20},
+			},
+			roll: 49,
+			want: EndingAlone,
+		},
+		{
+			name: "loses when roll equals threshold",
+			state: model.State{
+				Resources: model.Resources{Product: 40, Hype: 20},
+			},
+			roll: 50,
+			want: EndingNoOffer,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := resolveFinalPitch(&tc.state, tc.roll)
+			if got != tc.want {
+				t.Fatalf("resolveFinalPitch() = %v, want %v", got, tc.want)
 			}
 		})
 	}

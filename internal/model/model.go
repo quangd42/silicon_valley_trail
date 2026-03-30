@@ -1,12 +1,13 @@
 package model
 
 type State struct {
-	Day             int         `json:"day"`
-	Route           []Location  `json:"route"`
-	CurrentLocation int         `json:"current_location"`
-	Resources       Resources   `json:"resources"`
-	Party           Party       `json:"party"`
-	Weather         WeatherKind `json:"weather"`
+	Day              int         `json:"day"`
+	Route            []Location  `json:"route"`
+	CurrentLocation  int         `json:"current_location"`
+	Resources        Resources   `json:"resources"`
+	Party            Party       `json:"party"`
+	Weather          WeatherKind `json:"weather"`
+	NoCoffeeDayCount int         `json:"no_coffee_day_count"`
 }
 
 func NewState(route []Location) *State {
@@ -28,20 +29,20 @@ type Location struct {
 }
 
 type Resources struct {
-	Cash      int `json:"cash"`      // dollar
-	Morale    int `json:"morale"`    // percent
-	Coffee    int `json:"coffee"`    // cup
-	Hype      int `json:"hype"`      // percent
-	Readiness int `json:"readiness"` // percent
+	Cash    int `json:"cash"`    // dollar
+	Morale  int `json:"morale"`  // percent
+	Coffee  int `json:"coffee"`  // cup
+	Hype    int `json:"hype"`    // percent
+	Product int `json:"product"` // percent
 }
 
 func defaultResources() Resources {
 	return Resources{
-		Cash:      10_000,
-		Morale:    100,
-		Coffee:    30,
-		Hype:      10,
-		Readiness: 20,
+		Cash:    10_000,
+		Morale:  100,
+		Coffee:  30,
+		Hype:    10,
+		Product: 20,
 	}
 }
 
@@ -50,7 +51,7 @@ func (r *Resources) Add(delta Resources) {
 	r.Morale = addClamped(r.Morale, delta.Morale)
 	r.Coffee = addClamped(r.Coffee, delta.Coffee)
 	r.Hype = addClamped(r.Hype, delta.Hype)
-	r.Readiness = addClamped(r.Readiness, delta.Readiness)
+	r.Product = addClamped(r.Product, delta.Product)
 }
 
 func addClamped(a, b int) int {

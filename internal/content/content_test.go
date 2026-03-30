@@ -8,10 +8,10 @@ import (
 
 func TestLoad(t *testing.T) {
 	cont := Load()
-	if cont.Intro == "" {
+	if len(cont.Intro) == 0 {
 		t.Fatal("missing intro copy")
 	}
-	if cont.Ending == "" {
+	if len(cont.Endings) == 0 {
 		t.Fatal("missing ending copy")
 	}
 	if len(cont.Route) < 10 {

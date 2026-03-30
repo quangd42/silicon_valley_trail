@@ -56,7 +56,7 @@ func (t *Terminal) RenderDay(v view.DayView) {
 	t.thickSep()
 	r := v.Resources
 	t.fmt.Fprintf(t.out, "Cash: $%d | Morale: %d%% | Coffee: %d\n", r.Cash, r.Morale, r.Coffee)
-	t.fmt.Fprintf(t.out, "Hype: %d%% | Readiness: %d%%\n", r.Hype, r.Readiness)
+	t.fmt.Fprintf(t.out, "Hype: %d%% | Product Readiness: %d%%\n", r.Hype, r.Product)
 	t.fmt.Fprintf(t.out, "Progress: %d%% to San Francisco\n", v.Progress)
 	t.thickSep()
 	t.fmt.Fprintf(t.out, "Weather: %s\n\n", v.Weather)
@@ -143,7 +143,7 @@ func (t *Terminal) renderImpact(location string, delta model.Resources) {
 	if location != "" {
 		t.fmt.Fprintf(t.out, "Arrived at %s!\n\n", location)
 	}
-	impacts := []string{}
+	parts := []string{}
 	if delta.Cash != 0 {
 		var sign byte
 		if delta.Cash > 0 {
@@ -152,23 +152,22 @@ func (t *Terminal) renderImpact(location string, delta model.Resources) {
 			sign = '-'
 			delta.Cash *= -1
 		}
-		impacts = append(impacts, t.fmt.Sprintf("Cash %c$%d", sign, delta.Cash))
+		parts = append(parts, t.fmt.Sprintf("Cash %c$%d", sign, delta.Cash))
 	}
 	if delta.Coffee != 0 {
-		impacts = append(impacts, t.fmt.Sprintf("Coffee %+d", delta.Coffee))
+		parts = append(parts, t.fmt.Sprintf("Coffee %+d", delta.Coffee))
 	}
 	if delta.Morale != 0 {
-		impacts = append(impacts, t.fmt.Sprintf("Morale %+d%%", delta.Morale))
+		parts = append(parts, t.fmt.Sprintf("Morale %+d%%", delta.Morale))
 	}
 	if delta.Hype != 0 {
-		impacts = append(impacts, t.fmt.Sprintf("Hype %+d%%", delta.Hype))
+		parts = append(parts, t.fmt.Sprintf("Hype %+d%%", delta.Hype))
 	}
-	if delta.Readiness != 0 {
-		impacts = append(impacts, t.fmt.Sprintf("Product Readiness %+d%%", delta.Readiness))
+	if delta.Product != 0 {
+		parts = append(parts, t.fmt.Sprintf("Product %+d%%", delta.Product))
 	}
-	if len(impacts) != 0 {
-		t.fmt.Fprintf(t.out, "(%s)\n", strings.Join(impacts, ". "))
-	}
+	parts = append(parts, "Press Enter to continue...")
+	t.waitForEnterMsg(t.fmt.Sprintf("(%s)", strings.Join(parts, ". ")))
 }
 
 func (t *Terminal) renderNarrative(v []string) {
@@ -178,19 +177,21 @@ func (t *Terminal) renderNarrative(v []string) {
 	}
 	for _, line := range v[:l-1] {
 		t.out.WriteString(line)
+		t.linefeed()
+		t.linefeed()
 		t.waitForEnter()
 		t.clearLine()
 	}
 	t.out.WriteString(v[l-1])
+	t.linefeed()
 	t.out.Flush()
 }
 
 func (t *Terminal) RenderActionResult(v view.ActionResultView) {
 	t.thinSep()
 	t.renderNarrative(v.Narative)
-	t.renderImpact(v.LocationName, v.Delta)
 	t.thinSep()
-	t.waitForEnter()
+	t.renderImpact(v.LocationName, v.Delta)
 	t.ClearScreen()
 }
 
@@ -212,14 +213,22 @@ func (t *Terminal) RenderInfoNoWait(msg string) {
 }
 
 func (t *Terminal) RenderEnding(v view.EndingView) {
-	t.fmt.Fprint(t.out, v)
+	t.thickSep()
+	t.renderNarrative(v.Narrative)
+	t.fmt.Fprintf(t.out, "(%s)\n", v.Desc)
+	t.thickSep()
+	t.waitForEnterMsg("Game over. Press Enter to get back to main menu...")
+	t.ClearScreen()
+}
+
+func (t *Terminal) waitForEnterMsg(msg string) {
+	t.out.WriteString(msg)
 	t.out.Flush()
+	t.in.ReadString('\n')
 }
 
 func (t *Terminal) waitForEnter() {
-	t.out.WriteString("Press Enter to continue...")
-	t.out.Flush()
-	t.in.ReadString('\n')
+	t.waitForEnterMsg("(Press Enter to continue...)")
 }
 
 // ClearScreen prints escape sequence to clear terminal screen (\033[2J) and move cursor to top left (\033[H)

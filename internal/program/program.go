@@ -66,8 +66,15 @@ func startGame(
 				panic("invalid game session control")
 			}
 		}
+		ending := logic.EvaluateEnding(state)
+		if ending != logic.EndingNone {
+			rndr.RenderEnding(view.Ending(ending, cont))
+			return
+		}
 	}
-	rndr.RenderEnding(view.EndingView(cont.Ending))
+
+	ending := logic.ResolveFinalEnding(state)
+	rndr.RenderEnding(view.Ending(ending, cont))
 }
 
 func newGame(
