@@ -43,27 +43,28 @@ But what did it cost?...`
 }
 
 type ActionCopy struct {
-	Desc   string
-	Result string
+	Desc      string
+	Narrative []string
 }
 
+// TODO: when `actions` become interface, need unit tests to make sure every
 func actions() map[model.Action]ActionCopy {
 	return map[model.Action]ActionCopy{
 		model.ActionTravel: {
-			Desc:   "Travel to the next location",
-			Result: "Your team hit the road...\n\nArrived at %s!\n\n",
+			Desc:      "Travel to the next location",
+			Narrative: []string{"Your team hit the road...\n\n"},
 		},
 		model.ActionRest: {
-			Desc:   "Rest and recover (restore morale, use coffee)",
-			Result: "You decided to take a break...\n\n...\n\nYou're filled with determination.\n\n",
+			Desc:      "Rest and recover (restore morale, use coffee)",
+			Narrative: []string{"You decided to take a break...\n\n", "...zZz...\n\n", "You feel refreshed. You're filled with determination.\n\n"},
 		},
 		model.ActionBuild: {
-			Desc:   "Work on product (reduce bugs, use coffee)",
-			Result: "You take on the next item on the roadmap...\n\nYou're happy with the result, but everyone is tired...\n(Product is %d%% more ready. Cost %d coffee, %d%% morale)\n\n",
+			Desc:      "Work on product (reduce bugs, use coffee)",
+			Narrative: []string{"You take on the next item on the roadmap...\n\n", "You're happy with the result, but everyone is tired...\n\n"},
 		},
 		model.ActionMarket: {
-			Desc:   "Marketing push (increase hype, costs money)",
-			Result: "You launch a marketing campaign...\n\nEvery \"debate\" on X is about your product...\n(Hype increased. Cost $%d)\n\n",
+			Desc:      "Marketing push (increase hype, costs money)",
+			Narrative: []string{"You launch a marketing campaign...\n\n", "Every \"debate\" on X is about your product.\n\n"},
 		},
 	}
 }

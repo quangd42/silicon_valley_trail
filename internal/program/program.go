@@ -21,8 +21,8 @@ func Run(
 		r.RenderDay(view.Day(state))
 		selection := r.PromptSelection(view.InGamePrompt(cont))
 		if selection.Kind {
-			res := logic.ApplyAction(state, cont, selection.Action)
-			r.RenderInfo(res.Msg)
+			res := logic.ApplyAction(state, selection.Action)
+			r.RenderActionResult(view.ActionResult(res, cont))
 		} else {
 			switch selection.Control {
 			case model.ControlSave:

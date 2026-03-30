@@ -121,13 +121,66 @@ func (t *Terminal) PromptSelection(v view.PromptView) PromptChoice {
 	}
 }
 
+func (t *Terminal) renderImpact(location string, delta model.Resources) {
+	if location != "" {
+		t.fmt.Fprintf(t.out, "Arrived at %s!\n\n", location)
+	}
+	impacts := []string{}
+	if delta.Cash != 0 {
+		var sign byte
+		if delta.Cash > 0 {
+			sign = '+'
+		} else {
+			sign = '-'
+			delta.Cash *= -1
+		}
+		impacts = append(impacts, t.fmt.Sprintf("Cash %c$%d", sign, delta.Cash))
+	}
+	if delta.Coffee != 0 {
+		impacts = append(impacts, t.fmt.Sprintf("Coffee %+d", delta.Coffee))
+	}
+	if delta.Morale != 0 {
+		impacts = append(impacts, t.fmt.Sprintf("Morale %+d%%", delta.Morale))
+	}
+	if delta.Hype != 0 {
+		impacts = append(impacts, t.fmt.Sprintf("Hype %+d%%", delta.Hype))
+	}
+	if delta.Readiness != 0 {
+		impacts = append(impacts, t.fmt.Sprintf("Product Readiness %+d%%", delta.Readiness))
+	}
+	if len(impacts) != 0 {
+		t.fmt.Fprintf(t.out, "(%s)\n", strings.Join(impacts, ". "))
+	}
+}
+
+func (t *Terminal) renderNarrative(v []string) {
+	l := len(v)
+	if l == 0 {
+		return
+	}
+	for _, line := range v[:l-1] {
+		t.out.WriteString(line)
+		t.waitForEnter()
+		t.clearLine()
+	}
+	t.out.WriteString(v[l-1])
+	t.out.Flush()
+}
+
+func (t *Terminal) RenderActionResult(v view.ActionResultView) {
+	t.renderThinSep()
+	t.renderNarrative(v.Narative)
+	t.renderImpact(v.LocationName, v.Delta)
+	t.renderThinSep()
+	t.waitForEnter()
+	t.clearScreen()
+}
+
 func (t *Terminal) RenderInfo(msg string) {
 	t.renderThinSep()
 	t.out.WriteString(msg)
 	t.renderThinSep()
-	t.out.WriteString("Press Enter to continue...")
-	t.out.Flush()
-	t.in.ReadString('\n')
+	t.waitForEnter()
 	t.clearScreen()
 }
 
@@ -136,9 +189,20 @@ func (t *Terminal) RenderEnding(v view.EndingView) {
 	t.out.Flush()
 }
 
+func (t *Terminal) waitForEnter() {
+	t.out.WriteString("Press Enter to continue...")
+	t.out.Flush()
+	t.in.ReadString('\n')
+}
+
 // print escape sequence to clear terminal screen (\033[2J) and move cursor to top left (\033[H)
 func (t *Terminal) clearScreen() {
 	t.out.WriteString("\033[2J\033[H")
+}
+
+// print escape sequence to move cursor up (\033[A) and clear entire line (\033[2K)
+func (t *Terminal) clearLine() {
+	t.out.WriteString("\033[A\033[2K")
 }
 
 func (t *Terminal) renderThickSep() {
