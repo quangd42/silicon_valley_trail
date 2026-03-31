@@ -118,6 +118,6 @@ func weatherCopy() map[model.WeatherKind]string {
 		model.WeatherClear:   "You feel productive and ready to go.\n(Build++ Travel++)",
 		model.WeatherRainy:   "It's miserable out there.\n(Travel-- Marketing--)",
 		model.WeatherFog:     "You feel unsure about the future.\n(Build-- Travel--)",
-		model.WeatherCloudy:  "Everything feels in place.",
+		model.WeatherCloudy:  "Everything feels in place.\n(Rest++ Marketing++)",
 	}
 }
