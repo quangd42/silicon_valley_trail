@@ -2,6 +2,7 @@ package save
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 
@@ -9,6 +10,8 @@ import (
 )
 
 const DefaultSavePath = "svt_save.json"
+
+var ErrSaveCorrupted = errors.New("save file is corrupted")
 
 // JSONSaver persists game state as JSON on the local filesystem.
 //

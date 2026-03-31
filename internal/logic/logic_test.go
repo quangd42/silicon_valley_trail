@@ -37,9 +37,9 @@ func TestApplyAction(t *testing.T) {
 			},
 			action: model.ActionTravel,
 			want: ActionResult{
-				Action:       model.ActionTravel,
-				Delta:        model.Resources{Cash: -300, Coffee: -4, Morale: -5},
-				LocationName: "Santa Clara",
+				Action:          model.ActionTravel,
+				Delta:           model.Resources{Cash: -300, Coffee: -4, Morale: -5},
+				CurrentLocation: 1,
 			},
 			wantState: model.State{
 				Day: 4,
@@ -301,11 +301,11 @@ func TestApplyAction(t *testing.T) {
 			},
 			action: model.ActionTravel,
 			want: ActionResult{
-				Action:       model.ActionTravel,
-				Delta:        model.Resources{Cash: -300, Coffee: -6, Morale: -8},
-				WeatherDelta: model.Resources{Coffee: -2, Morale: -3},
-				Weather:      model.WeatherRainy,
-				LocationName: "Santa Clara",
+				Action:          model.ActionTravel,
+				Delta:           model.Resources{Cash: -300, Coffee: -6, Morale: -8},
+				WeatherDelta:    model.Resources{Coffee: -2, Morale: -3},
+				Weather:         model.WeatherRainy,
+				CurrentLocation: 1,
 			},
 			wantState: model.State{
 				Day: 1,

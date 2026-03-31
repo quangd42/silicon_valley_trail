@@ -33,7 +33,7 @@ func NewTerminal(in io.Reader, out io.Writer) *Terminal {
 	}
 }
 
-func (t *Terminal) RenderMainMenu(v view.PromptView) PromptChoice {
+func (t *Terminal) RenderMainMenu(v view.PromptView) model.PromptChoice {
 	t.thickSep()
 	t.out.WriteString("SILICON VALLEY TRAIL - Main Menu\n")
 	t.thickSep()
@@ -47,6 +47,7 @@ func (t *Terminal) RenderIntro(v view.IntroView) {
 	t.thinSep()
 	t.out.Flush()
 	t.in.ReadString('\n')
+	t.ClearScreen()
 }
 
 func (t *Terminal) RenderDay(v view.DayView) {
@@ -82,18 +83,7 @@ func (t *Terminal) renderControls(v []model.Control, label string, start int) {
 	t.linefeed()
 }
 
-// PromptChoice is the type of the result of `PromptSelection()`. It is a poor man's tagged
-// union, to distinguish if the user has chosen an in-game action or a game session control,
-// as we unfortunately have to mix those two choices in this CLI UI representation.
-// When `Kind` = true, `Action` is set, otherwise `Control` is set. Accessing the unset
-// field does not panic, simply returns the default (and wrong) value.
-type PromptChoice struct {
-	Kind    bool // true = Action, false = Control
-	Action  model.Action
-	Control model.Control
-}
-
-func (t *Terminal) PromptSelection(v view.PromptView) PromptChoice {
+func (t *Terminal) PromptSelection(v view.PromptView) model.PromptChoice {
 	actionCount := len(v.Actions)
 	controlCount := len(v.Controls)
 	if actionCount > 0 {
@@ -123,12 +113,12 @@ func (t *Terminal) PromptSelection(v view.PromptView) PromptChoice {
 		}
 		switch {
 		case choice >= 1 && choice <= actionCount:
-			return PromptChoice{
+			return model.PromptChoice{
 				Kind:   true,
 				Action: v.Actions[choice-1].Kind,
 			}
 		case choice > actionCount && choice <= actionCount+controlCount:
-			return PromptChoice{
+			return model.PromptChoice{
 				Kind:    false,
 				Control: v.Controls[choice-1-actionCount],
 			}

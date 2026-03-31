@@ -36,10 +36,18 @@ type ActionResultView struct {
 }
 
 func ActionResult(ar logic.ActionResult, c *content.Content) ActionResultView {
+	// CurrentLocation will always >= 1 after a Travel action, so we're reusing
+	// default value 0 as sentinel value for "did not travel".
+	var locName string
+	if ar.CurrentLocation == 0 {
+		locName = ""
+	} else {
+		locName = c.Route[ar.CurrentLocation].Name
+	}
 	return ActionResultView{
 		Narative:     c.Actions[ar.Action].Narrative,
 		Delta:        ar.Delta,
-		LocationName: ar.LocationName,
+		LocationName: locName,
 		Weather:      ar.Weather,
 	}
 }

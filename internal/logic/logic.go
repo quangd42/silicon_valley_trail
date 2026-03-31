@@ -11,7 +11,9 @@ type ActionResult struct {
 	Delta        model.Resources
 	Weather      model.WeatherKind
 	WeatherDelta model.Resources
-	LocationName string
+	// CurrentLocation will always >= 1 after a Travel action, so we're reusing
+	// default value 0 as sentinel value for "did not travel".
+	CurrentLocation int
 }
 
 func ApplyAction(s *model.State, action model.Action) ActionResult {
@@ -24,7 +26,7 @@ func ApplyAction(s *model.State, action model.Action) ActionResult {
 	switch action {
 	case model.ActionTravel:
 		s.CurrentLocation += 1
-		out.LocationName = s.Route[s.CurrentLocation].Name
+		out.CurrentLocation = s.CurrentLocation
 		out.Delta = model.Resources{
 			Cash:   -150 * teamSize,
 			Coffee: -2 * teamSize,

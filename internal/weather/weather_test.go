@@ -21,7 +21,7 @@ func TestWeatherService(t *testing.T) {
 	t.Run("uses mock service when api key is missing", func(t *testing.T) {
 		svc := NewWeatherService("", false, 0)
 
-		got, err := svc.Current(context.Background(), model.Location{ID: "san-jose"})
+		got, err := svc.WeatherAt(context.Background(), model.Location{ID: "san-jose"})
 		if err != nil {
 			t.Fatalf("Current() error = %v", err)
 		}
@@ -32,11 +32,11 @@ func TestWeatherService(t *testing.T) {
 
 	t.Run("falls back to mock on remote error", func(t *testing.T) {
 		svc := &WeatherService{
-			mock:   stubService{kind: model.WeatherFog},
-			remote: stubService{err: errors.New("boom")},
+			mock:   stubService{kind: model.WeatherFog}.Current,
+			remote: stubService{err: errors.New("boom")}.Current,
 		}
 
-		got, err := svc.Current(context.Background(), model.Location{ID: "san-jose"})
+		got, err := svc.WeatherAt(context.Background(), model.Location{ID: "san-jose"})
 		if err != nil {
 			t.Fatalf("Current() error = %v, want nil", err)
 		}

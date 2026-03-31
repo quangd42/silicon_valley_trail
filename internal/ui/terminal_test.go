@@ -16,14 +16,14 @@ func TestPromptSelection(t *testing.T) {
 	tests := []struct {
 		name             string
 		input            string
-		wantChoice       PromptChoice
+		wantChoice       model.PromptChoice
 		wantSubstrings   []string
 		extraPromptCount int
 	}{
 		{
 			name:  "select first action",
 			input: "1\n",
-			wantChoice: PromptChoice{
+			wantChoice: model.PromptChoice{
 				Kind:   true,
 				Action: model.ActionTravel,
 			},
@@ -38,7 +38,7 @@ func TestPromptSelection(t *testing.T) {
 		{
 			name:  "select last action",
 			input: "4\n",
-			wantChoice: PromptChoice{
+			wantChoice: model.PromptChoice{
 				Kind:   true,
 				Action: model.ActionMarket,
 			},
@@ -50,7 +50,7 @@ func TestPromptSelection(t *testing.T) {
 		{
 			name:  "select first control",
 			input: "5\n",
-			wantChoice: PromptChoice{
+			wantChoice: model.PromptChoice{
 				Kind:    false,
 				Control: model.ControlSave,
 			},
@@ -63,7 +63,7 @@ func TestPromptSelection(t *testing.T) {
 		{
 			name:  "invalid input retries before selecting control",
 			input: "abc\n9\n6\n",
-			wantChoice: PromptChoice{
+			wantChoice: model.PromptChoice{
 				Kind:    false,
 				Control: model.ControlQuitToMenu,
 			},

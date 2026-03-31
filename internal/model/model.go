@@ -129,12 +129,43 @@ const (
 	ActionCount
 )
 
-type Control string
+type Control int
 
 const (
-	ControlSave       Control = "Save Game"
-	ControlLoad       Control = "Load Game"
-	ControlQuitToMenu Control = "Quit to Menu"
-	ControlNewGame    Control = "New Game"
-	ControlQuitGame   Control = "Quit Game"
+	ControlSave Control = iota
+	ControlLoad
+	ControlQuitToMenu
+	ControlNewGame
+	ControlQuitGame
 )
+
+func (c Control) String() string {
+	switch c {
+	case ControlSave:
+		return "Save Game"
+	case ControlLoad:
+		return "Load Game"
+	case ControlQuitToMenu:
+		return "Quit to Menu"
+	case ControlNewGame:
+		return "New Game"
+	case ControlQuitGame:
+		return "Quit Game"
+	default:
+		panic("unreachable")
+	}
+}
+
+// PromptChoice is the type of the result of `PromptSelection()`. It is a poor man's tagged
+// union, to distinguish if the user has chosen an in-game action or a game session control.
+// Even though it is defined here, its existence comes from the fact that we unfortunately
+// have to mix those two choices in the same input interface in the CLI UI representation,
+// and it will need to be refactored if we ever add another UI.
+//
+// When `Kind` = true, `Action` is set, otherwise `Control` is set. Accessing the unset
+// field does not panic, simply returns the default (and wrong) value.
+type PromptChoice struct {
+	Kind    bool // true = Action, false = Control
+	Action  Action
+	Control Control
+}

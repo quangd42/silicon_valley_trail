@@ -8,16 +8,34 @@ import (
 	"github.com/quangd42/silicon_valley_trail/internal/content"
 	"github.com/quangd42/silicon_valley_trail/internal/logic"
 	"github.com/quangd42/silicon_valley_trail/internal/model"
-	"github.com/quangd42/silicon_valley_trail/internal/save"
-	"github.com/quangd42/silicon_valley_trail/internal/ui"
 	"github.com/quangd42/silicon_valley_trail/internal/view"
-	"github.com/quangd42/silicon_valley_trail/internal/weather"
 )
 
+type Renderer interface {
+	RenderMainMenu(view.PromptView) model.PromptChoice
+	RenderIntro(view.IntroView)
+	RenderDay(view.DayView)
+	PromptSelection(view.PromptView) model.PromptChoice
+	RenderActionResult(view.ActionResultView)
+	RenderInfo(string)
+	RenderInfoNoWait(string)
+	RenderEnding(view.EndingView)
+	ClearScreen()
+}
+
+type Saver interface {
+	Save(*model.State) error
+	Load(*model.State) error
+}
+
+type WeatherProvider interface {
+	WeatherAt(context.Context, model.Location) (model.WeatherKind, error)
+}
+
 func Run(
-	renderer *ui.Terminal,
-	saver save.Saver,
-	weather weather.Service,
+	renderer Renderer,
+	saver Saver,
+	weather WeatherProvider,
 	cont *content.Content,
 ) {
 	for {
@@ -39,9 +57,9 @@ func Run(
 }
 
 func startGame(
-	rndr *ui.Terminal,
-	saver save.Saver,
-	weather weather.Service,
+	rndr Renderer,
+	saver Saver,
+	weather WeatherProvider,
 	cont *content.Content,
 	state *model.State,
 	new bool,
@@ -49,7 +67,6 @@ func startGame(
 	rndr.ClearScreen()
 	if new {
 		rndr.RenderIntro(view.IntroView(cont.Intro))
-		rndr.ClearScreen()
 	}
 	for state.CurrentLocation < len(state.Route)-1 {
 		refreshWeather(state, weather)
@@ -83,9 +100,9 @@ func startGame(
 }
 
 func newGame(
-	rndr *ui.Terminal,
-	saver save.Saver,
-	weather weather.Service,
+	rndr Renderer,
+	saver Saver,
+	weather WeatherProvider,
 	cont *content.Content,
 ) {
 	state := model.NewState(content.DefaultRoute())
@@ -93,9 +110,9 @@ func newGame(
 }
 
 func loadGame(
-	rndr *ui.Terminal,
-	saver save.Saver,
-	weather weather.Service,
+	rndr Renderer,
+	saver Saver,
+	weather WeatherProvider,
 	cont *content.Content,
 ) error {
 	var state model.State
@@ -109,8 +126,8 @@ func loadGame(
 }
 
 func saveGame(
-	rndr *ui.Terminal,
-	saver save.Saver,
+	rndr Renderer,
+	saver Saver,
 	state *model.State,
 ) {
 	err := saver.Save(state)
@@ -121,21 +138,21 @@ func saveGame(
 	rndr.RenderInfo("Game saved.")
 }
 
-func quitGame(rndr *ui.Terminal) {
+func quitGame(rndr Renderer) {
 	rndr.RenderInfoNoWait("Bye!")
 	os.Exit(0)
 }
 
-func refreshWeather(state *model.State, svc weather.Service) {
+func refreshWeather(state *model.State, svc WeatherProvider) {
 	if svc == nil || len(state.Route) == 0 {
 		state.Weather = model.WeatherUnknown
 		return
 	}
 
-	current, err := svc.Current(context.Background(), state.Route[state.CurrentLocation])
+	weather, err := svc.WeatherAt(context.Background(), state.Route[state.CurrentLocation])
 	if err != nil {
 		state.Weather = model.WeatherUnknown
 		return
 	}
-	state.Weather = current
+	state.Weather = weather
 }
