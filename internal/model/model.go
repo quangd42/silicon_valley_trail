@@ -82,11 +82,11 @@ type PartyMember struct {
 type WeatherKind string
 
 const (
-	WeatherClear  WeatherKind = "clear"
-	WeatherRainy  WeatherKind = "rain"
-	WeatherFog    WeatherKind = "fog"
-	WeatherHot    WeatherKind = "heat"
-	WeatherCloudy WeatherKind = "cloudy"
+	WeatherUnknown WeatherKind = "unknown"
+	WeatherClear   WeatherKind = "clear"
+	WeatherRainy   WeatherKind = "rain"
+	WeatherFog     WeatherKind = "fog"
+	WeatherCloudy  WeatherKind = "cloudy"
 )
 
 type Action int

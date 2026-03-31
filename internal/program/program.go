@@ -10,11 +10,13 @@ import (
 	"github.com/quangd42/silicon_valley_trail/internal/save"
 	"github.com/quangd42/silicon_valley_trail/internal/ui"
 	"github.com/quangd42/silicon_valley_trail/internal/view"
+	"github.com/quangd42/silicon_valley_trail/internal/weather"
 )
 
 func Run(
 	renderer *ui.Terminal,
 	saver save.Saver,
+	_ weather.Service,
 	cont *content.Content,
 ) {
 	for {
