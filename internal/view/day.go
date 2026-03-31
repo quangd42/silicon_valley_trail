@@ -7,22 +7,24 @@ import (
 )
 
 type DayView struct {
-	Day       int
-	Resources model.Resources
-	Party     model.Party
-	Location  model.Location
-	Progress  int
-	Weather   model.WeatherKind
+	Day           int
+	Resources     model.Resources
+	Party         model.Party
+	Location      model.Location
+	Progress      int
+	Weather       model.WeatherKind
+	WeatherImpact string
 }
 
-func Day(s *model.State) DayView {
+func Day(s *model.State, c *content.Content) DayView {
 	return DayView{
-		Day:       s.Day,
-		Resources: s.Resources,
-		Party:     s.Party,
-		Location:  s.Route[s.CurrentLocation],
-		Progress:  (s.CurrentLocation + 1) * 100 / len(s.Route),
-		Weather:   s.Weather,
+		Day:           s.Day,
+		Resources:     s.Resources,
+		Party:         s.Party,
+		Location:      s.Route[s.CurrentLocation],
+		Progress:      (s.CurrentLocation + 1) * 100 / len(s.Route),
+		Weather:       s.Weather,
+		WeatherImpact: c.Weather[s.Weather],
 	}
 }
 
@@ -30,6 +32,7 @@ type ActionResultView struct {
 	Narative     []string
 	Delta        model.Resources
 	LocationName string
+	Weather      model.WeatherKind
 }
 
 func ActionResult(ar logic.ActionResult, c *content.Content) ActionResultView {
@@ -37,5 +40,6 @@ func ActionResult(ar logic.ActionResult, c *content.Content) ActionResultView {
 		Narative:     c.Actions[ar.Action].Narrative,
 		Delta:        ar.Delta,
 		LocationName: ar.LocationName,
+		Weather:      ar.Weather,
 	}
 }

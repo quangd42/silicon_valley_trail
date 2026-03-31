@@ -29,7 +29,7 @@ func TestPromptSelection(t *testing.T) {
 			},
 			wantSubstrings: []string{
 				"Actions:\n",
-				"1. Travel to the next location\n",
+				"1. Travel to the next location (costs cash, coffee, and morale)\n",
 				"Controls:\n",
 				"5. Save Game\n",
 				"Enter choice (1-6): ",
@@ -43,7 +43,7 @@ func TestPromptSelection(t *testing.T) {
 				Action: model.ActionMarket,
 			},
 			wantSubstrings: []string{
-				"4. Marketing push (increase hype, costs money)\n",
+				"4. Marketing push (increase hype, costs cash and coffee)\n",
 				"Enter choice (1-6): ",
 			},
 		},

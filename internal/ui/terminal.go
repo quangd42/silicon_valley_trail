@@ -59,7 +59,7 @@ func (t *Terminal) RenderDay(v view.DayView) {
 	t.fmt.Fprintf(t.out, "Hype: %d%% | Product Readiness: %d%%\n", r.Hype, r.Product)
 	t.fmt.Fprintf(t.out, "Progress: %d%% to San Francisco\n", v.Progress)
 	t.thickSep()
-	t.fmt.Fprintf(t.out, "Weather: %s\n\n", v.Weather)
+	t.fmt.Fprintf(t.out, "Weather: %s\n%s\n", v.Weather, v.WeatherImpact)
 	t.thinSep()
 	t.out.WriteString("What will you do?\n")
 	t.thinSep()

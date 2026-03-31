@@ -47,6 +47,14 @@ func defaultResources() Resources {
 }
 
 func (r *Resources) Add(delta Resources) {
+	r.Cash += delta.Cash
+	r.Morale += delta.Morale
+	r.Coffee += delta.Coffee
+	r.Hype += delta.Hype
+	r.Product += delta.Product
+}
+
+func (r *Resources) AddClamped(delta Resources) {
 	r.Cash = addClamped(r.Cash, delta.Cash)
 	r.Morale = addClamped(r.Morale, delta.Morale)
 	r.Coffee = addClamped(r.Coffee, delta.Coffee)
@@ -79,15 +87,35 @@ type PartyMember struct {
 	Name string `json:"name"`
 }
 
-type WeatherKind string
+type WeatherKind int
 
 const (
-	WeatherUnknown WeatherKind = "unknown"
-	WeatherClear   WeatherKind = "clear"
-	WeatherRainy   WeatherKind = "rain"
-	WeatherFog     WeatherKind = "fog"
-	WeatherCloudy  WeatherKind = "cloudy"
+	WeatherUnknown WeatherKind = iota
+	WeatherClear
+	WeatherRainy
+	WeatherFog
+	WeatherCloudy
+
+	// Sentinel value, holds the count of weather kinds. Mainly useful for testing.
+	WeatherKindCount
 )
+
+func (w WeatherKind) String() string {
+	switch w {
+	case WeatherUnknown:
+		return "Unknown"
+	case WeatherClear:
+		return "Clear"
+	case WeatherRainy:
+		return "Rainy"
+	case WeatherFog:
+		return "Fog"
+	case WeatherCloudy:
+		return "Cloudy"
+	default:
+		panic("unreachable")
+	}
+}
 
 type Action int
 

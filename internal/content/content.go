@@ -12,6 +12,7 @@ type Content struct {
 	Intro   []string
 	Route   []model.Location
 	Actions map[model.Action]ActionCopy
+	Weather map[model.WeatherKind]string
 	Endings map[logic.Ending]EndingCopy
 }
 
@@ -22,6 +23,7 @@ func Load() *Content {
 		Intro:   introCopy(),
 		Route:   DefaultRoute(),
 		Actions: actionCopy(),
+		Weather: weatherCopy(),
 		Endings: endingCopy(),
 	}
 }
@@ -34,16 +36,13 @@ You and your best bud Pete set out from your HQ in San Jose to San Francisco to 
 major investor meeting. Your product: a sleeping mask that lets people relive childhood
 memories through dreams.
 
-Will you be able to impress the investors?
-`,
-		`
-Manage your resources wisely:
+Will you be able to impress the investors?`,
+		`Manage your resources wisely:
 * Cash    ($)   : Don’t run out. No cash = game over.
 * Morale  (%)   : Keep the team motivated.
 * Coffee  (cups): Your startup fuel. 2 days without it = game over.
 * Product (%)   : How ready your product is. Directly affects your odds of getting signed.
-* Hype    (%)   : Public interest in your startup. Every 2 Hype = 1 Product.
-`,
+* Hype    (%)   : Public interest in your startup. Every 2 Hype = 1 Product.`,
 	}
 }
 
@@ -92,24 +91,33 @@ type ActionCopy struct {
 	Narrative Narrative
 }
 
-// TODO: when `actionCopy` become interface, need unit tests to make sure every source will provide enough content
 func actionCopy() map[model.Action]ActionCopy {
 	return map[model.Action]ActionCopy{
 		model.ActionTravel: {
-			Desc:      "Travel to the next location",
+			Desc:      "Travel to the next location (costs cash, coffee, and morale)",
 			Narrative: []string{"Your team hit the road..."},
 		},
 		model.ActionRest: {
-			Desc:      "Rest and recover (restore morale, use coffee)",
+			Desc:      "Rest and recover (restore morale and coffee, costs cash)",
 			Narrative: []string{"You decided to take a break...", "...zZz...", "You feel refreshed. You're filled with determination."},
 		},
 		model.ActionBuild: {
-			Desc:      "Work on product (reduce bugs, use coffee)",
+			Desc:      "Work on product (increase product readiness, costs coffee and morale)",
 			Narrative: []string{"You take on the next item on the roadmap...", "You're happy with the result, but everyone is tired..."},
 		},
 		model.ActionMarket: {
-			Desc:      "Marketing push (increase hype, costs money)",
+			Desc:      "Marketing push (increase hype, costs cash and coffee)",
 			Narrative: []string{"You launch a marketing campaign...", "Every \"debate\" on X is about your product."},
 		},
+	}
+}
+
+func weatherCopy() map[model.WeatherKind]string {
+	return map[model.WeatherKind]string{
+		model.WeatherUnknown: "What is going on?",
+		model.WeatherClear:   "You feel productive and ready to go.\n(Build++ Travel++)",
+		model.WeatherRainy:   "It's miserable out there.\n(Travel-- Marketing--)",
+		model.WeatherFog:     "You feel unsure about the future.\n(Build-- Travel--)",
+		model.WeatherCloudy:  "Everything feels in place.",
 	}
 }

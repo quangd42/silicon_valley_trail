@@ -1,6 +1,7 @@
 package program
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -16,7 +17,7 @@ import (
 func Run(
 	renderer *ui.Terminal,
 	saver save.Saver,
-	_ weather.Service,
+	weather weather.Service,
 	cont *content.Content,
 ) {
 	for {
@@ -26,9 +27,9 @@ func Run(
 		}
 		switch selection.Control {
 		case model.ControlNewGame:
-			newGame(renderer, saver, cont)
+			newGame(renderer, saver, weather, cont)
 		case model.ControlLoad:
-			loadGame(renderer, saver, cont)
+			loadGame(renderer, saver, weather, cont)
 		case model.ControlQuitGame:
 			quitGame(renderer)
 		default:
@@ -40,6 +41,7 @@ func Run(
 func startGame(
 	rndr *ui.Terminal,
 	saver save.Saver,
+	weather weather.Service,
 	cont *content.Content,
 	state *model.State,
 	new bool,
@@ -50,7 +52,8 @@ func startGame(
 		rndr.ClearScreen()
 	}
 	for state.CurrentLocation < len(state.Route)-1 {
-		rndr.RenderDay(view.Day(state))
+		refreshWeather(state, weather)
+		rndr.RenderDay(view.Day(state, cont))
 		selection := rndr.PromptSelection(view.InGamePrompt(cont))
 		if selection.Kind {
 			res := logic.ApplyAction(state, selection.Action)
@@ -82,15 +85,17 @@ func startGame(
 func newGame(
 	rndr *ui.Terminal,
 	saver save.Saver,
+	weather weather.Service,
 	cont *content.Content,
 ) {
 	state := model.NewState(content.DefaultRoute())
-	startGame(rndr, saver, cont, state, true)
+	startGame(rndr, saver, weather, cont, state, true)
 }
 
 func loadGame(
 	rndr *ui.Terminal,
 	saver save.Saver,
+	weather weather.Service,
 	cont *content.Content,
 ) error {
 	var state model.State
@@ -99,7 +104,7 @@ func loadGame(
 		rndr.RenderInfo(fmt.Sprintf("Failed to load game: %s", err.Error()))
 		return err
 	}
-	startGame(rndr, saver, cont, &state, false)
+	startGame(rndr, saver, weather, cont, &state, false)
 	return nil
 }
 
@@ -119,4 +124,18 @@ func saveGame(
 func quitGame(rndr *ui.Terminal) {
 	rndr.RenderInfoNoWait("Bye!")
 	os.Exit(0)
+}
+
+func refreshWeather(state *model.State, svc weather.Service) {
+	if svc == nil || len(state.Route) == 0 {
+		state.Weather = model.WeatherUnknown
+		return
+	}
+
+	current, err := svc.Current(context.Background(), state.Route[state.CurrentLocation])
+	if err != nil {
+		state.Weather = model.WeatherUnknown
+		return
+	}
+	state.Weather = current
 }
