@@ -16,6 +16,8 @@ type Renderer interface {
 	RenderDayInfo(view.DayView)
 	RenderPrompt(view.PromptView) model.PromptChoice
 	RenderActionResult(view.ActionResultView)
+	RenderEventInfo(view.EventView)
+	RenderEventResult(v view.EventResultView)
 	RenderInfo(string)
 	RenderInfoNoWait(string)
 	RenderEnding(view.EndingView)
@@ -82,28 +84,18 @@ func (p *Program) startGame(state *model.State, isNew bool) {
 		p.renderer.RenderIntro(view.IntroView(p.def.Intro))
 	}
 	for state.CurrentLocation < len(state.Route)-1 {
-		p.refreshWeather(state)
-		p.renderer.RenderDayInfo(view.Day(state, p.def))
-		selection := p.renderer.RenderPrompt(view.DayPrompt(p.def))
-		if selection.Kind == model.ChoiceAction {
-			res := p.applyAction(state, selection.Action)
-			p.renderer.RenderActionResult(view.ActionResult(res, p.def))
-		} else {
-			switch selection.Control {
-			case model.ControlSave:
-				p.saveGame(state)
-			case model.ControlQuitToMenu:
-				// simply return from the game loop because we're
-				// already in the main menu loop
-				p.renderer.ClearScreen()
+		turn := p.playTurn(state)
+		if turn.quitToMenu {
+			return
+		}
+		if turn.traveled {
+			// Event has a chance to play out after arriving at a new location
+			// (beginning of a new day/turn).
+			if p.playEvent(state) {
 				return
-			default:
-				panic("invalid game session control")
 			}
 		}
-		ending := logic.EvaluateEnding(state)
-		if ending != logic.EndingNone {
-			p.renderer.RenderEnding(view.Ending(ending, p.def))
+		if p.evaluateEnding(state) {
 			return
 		}
 	}
@@ -146,6 +138,73 @@ func (p *Program) quitGame() {
 	exit(0)
 }
 
+// Returns true when `QuitToMainMenu` is selected
+func (p *Program) playEvent(state *model.State) bool {
+	if state.CurrentLocation == 0 {
+		return false
+	}
+	// Events have a 1 in 3 chance of occuring
+	roll := p.rng.IntN(3)
+	if roll >= 1 {
+		return false
+	}
+	events := p.def.Events
+	eventIndex := p.rng.IntN(len(events))
+	eventDef := events[eventIndex]
+	for {
+		p.renderer.RenderEventInfo(view.Event(eventDef))
+		choice := p.renderer.RenderPrompt(view.EventChoicePrompt(eventDef))
+		switch choice.Kind {
+		case model.ChoiceControl:
+			if p.applyControl(state, choice.Control) {
+				return true
+			}
+		case model.ChoiceEvent:
+			result := p.applyEventChoice(state, choice.EventChoiceIndex, eventDef)
+			p.renderer.RenderEventResult(view.EventResult(eventIndex, choice.EventChoiceIndex, result, eventDef))
+			return false
+		default:
+			panic("non event choice from event")
+
+		}
+	}
+}
+
+type TurnInfo struct {
+	quitToMenu bool
+	traveled   bool
+}
+
+func (p *Program) playTurn(state *model.State) TurnInfo {
+	p.refreshWeather(state)
+	for {
+		p.renderer.RenderDayInfo(view.Day(state, p.def))
+		choice := p.renderer.RenderPrompt(view.DayPrompt(p.def))
+		switch choice.Kind {
+		case model.ChoiceControl:
+			if p.applyControl(state, choice.Control) {
+				return TurnInfo{quitToMenu: true}
+			}
+		case model.ChoiceAction:
+			res := p.applyAction(state, choice.Action)
+			p.renderer.RenderActionResult(view.ActionResult(choice.Action, res, p.def))
+			return TurnInfo{traveled: choice.Action == model.ActionTravel}
+		default:
+			panic("non action choice from day action")
+		}
+	}
+}
+
+// Returns true when game losing conditions are met
+func (p *Program) evaluateEnding(state *model.State) bool {
+	ending := logic.EvaluateEnding(state)
+	if ending != logic.EndingNone {
+		p.renderer.RenderEnding(view.Ending(ending, p.def))
+		return true
+	}
+	return false
+}
+
 func (p *Program) refreshWeather(state *model.State) {
 	if p.weather == nil || len(state.Route) == 0 {
 		state.Weather = model.WeatherUnknown
@@ -160,7 +219,7 @@ func (p *Program) refreshWeather(state *model.State) {
 	state.Weather = weather
 }
 
-func (p *Program) applyAction(state *model.State, action model.Action) logic.Result {
+func (p *Program) applyAction(state *model.State, action model.Action) logic.ActionResult {
 	actionDef := p.def.Actions[action]
 	weatherDef := p.def.Weather[state.Weather]
 	return logic.ApplyActionEffects(
@@ -170,4 +229,22 @@ func (p *Program) applyAction(state *model.State, action model.Action) logic.Res
 		weatherDef.Effect,
 		p.rng,
 	)
+}
+
+func (p *Program) applyEventChoice(state *model.State, choiceIndex int, def gamedef.EventData) logic.EventResult {
+	choice := def.Choices[choiceIndex]
+	return logic.ApplyEventChoiceEffect(state, choice.Effect)
+}
+
+func (p *Program) applyControl(state *model.State, control model.Control) bool {
+	switch control {
+	case model.ControlSave:
+		p.saveGame(state)
+		return false
+	case model.ControlQuitToMenu:
+		p.renderer.ClearScreen()
+		return true
+	default:
+		panic("invalid in-game session control")
+	}
 }

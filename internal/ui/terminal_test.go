@@ -29,9 +29,7 @@ func TestRenderPrompt(t *testing.T) {
 				Action: model.ActionTravel,
 			},
 			wantSubstrings: []string{
-				"Actions:\n",
 				"1. Travel to the next location (costs cash, coffee, and morale)\n",
-				"Controls:\n",
 				"5. Save Game\n",
 				"Enter choice (1-6): ",
 			},

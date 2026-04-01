@@ -112,7 +112,7 @@ func (t *Terminal) readPromptSelection(totalCount int) int {
 
 func (t *Terminal) RenderActionResult(v view.ActionResultView) {
 	t.thinSep()
-	t.renderNarrative(v.Narative)
+	t.renderNarrative(v.Narrative)
 	t.thinSep()
 	t.renderImpact(v.LocationName, v.Delta)
 	t.ClearScreen()
@@ -147,6 +147,23 @@ func (t *Terminal) renderImpact(location string, delta model.Resources) {
 	}
 	parts = append(parts, "Press Enter to continue...")
 	t.waitForEnterMsg(t.fmt.Sprintf("(%s)", strings.Join(parts, ". ")))
+}
+
+func (t *Terminal) RenderEventInfo(v view.EventView) {
+	t.alertSep()
+	t.fmt.Fprintf(t.out, "EVENT: %s\n", v.Name)
+	t.alertSep()
+	t.renderNarrative(v.Narrative)
+	t.thinSep()
+	t.out.Flush()
+}
+
+func (t *Terminal) RenderEventResult(v view.EventResultView) {
+	t.thinSep()
+	t.renderNarrative(v.Narrative)
+	t.thinSep()
+	t.renderImpact("", v.Delta)
+	t.ClearScreen()
 }
 
 func (t *Terminal) RenderInfo(msg string) {

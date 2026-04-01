@@ -29,13 +29,13 @@ func Day(s *model.State, def *gamedef.Definition) DayView {
 }
 
 type ActionResultView struct {
-	Narative     []string
+	Narrative    []string
 	Delta        model.Resources
 	LocationName string
 	Weather      model.WeatherKind
 }
 
-func ActionResult(ar logic.Result, def *gamedef.Definition) ActionResultView {
+func ActionResult(action model.Action, ar logic.ActionResult, def *gamedef.Definition) ActionResultView {
 	// CurrentLocation will always >= 1 after a Travel action, so we're reusing
 	// default value 0 as sentinel value for "did not travel".
 	var locName string
@@ -45,7 +45,7 @@ func ActionResult(ar logic.Result, def *gamedef.Definition) ActionResultView {
 		locName = def.Route[ar.CurrentLocation].Name
 	}
 	return ActionResultView{
-		Narative:     def.Actions[ar.Action].Narrative,
+		Narrative:    def.Actions[action].Narrative,
 		Delta:        ar.Delta,
 		LocationName: locName,
 		Weather:      ar.Weather,

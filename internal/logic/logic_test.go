@@ -17,7 +17,6 @@ func TestChangeApply(t *testing.T) {
 			Hype:    3,
 			Product: 4,
 		},
-		Weather: model.WeatherRainy,
 	}
 
 	got := Change{
@@ -28,7 +27,6 @@ func TestChangeApply(t *testing.T) {
 
 	want := Result{
 		Delta:           model.Resources{Cash: -150, Morale: 5, Coffee: -5, Hype: 2},
-		Weather:         model.WeatherRainy,
 		CurrentLocation: 2,
 	}
 	if got != want {
@@ -98,12 +96,13 @@ func TestApplyActionEffects(t *testing.T) {
 
 		got := ApplyActionEffects(&state, model.ActionTravel, actionEffect, weatherEffect, nil)
 
-		want := Result{
-			Action:          model.ActionTravel,
-			Delta:           model.Resources{Cash: -30, Coffee: -2, Morale: 4},
-			Weather:         model.WeatherCloudy,
-			WeatherDelta:    model.Resources{Morale: 4},
-			CurrentLocation: 3,
+		want := ActionResult{
+			Result: Result{
+				Delta:           model.Resources{Cash: -30, Coffee: -2, Morale: 4},
+				CurrentLocation: 3,
+			},
+			Weather:      model.WeatherCloudy,
+			WeatherDelta: model.Resources{Morale: 4},
 		}
 		if got != want {
 			t.Fatalf("ApplyActionEffects() = %#v, want %#v", got, want)

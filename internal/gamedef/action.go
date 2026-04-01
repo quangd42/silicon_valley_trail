@@ -40,7 +40,7 @@ func actionData() map[model.Action]ActionData {
 		},
 		model.ActionRest: {
 			Desc:      "Rest and recover (restore morale and coffee, costs cash)",
-			Narrative: []string{"You decided to take a break...", "...zZz...", "You feel refreshed. You're filled with determination."},
+			Narrative: []string{"You decided to take a break...\n\n...zZz...\n\nYou feel refreshed. You're filled with determination."},
 			Effect: func(s *model.State, _ logic.Context) logic.Change {
 				teamSize := len(s.Party.Members)
 				return logic.Change{
@@ -55,7 +55,7 @@ func actionData() map[model.Action]ActionData {
 		},
 		model.ActionBuild: {
 			Desc:      "Work on product (increase product readiness, costs coffee and morale)",
-			Narrative: []string{"You take on the next item on the roadmap...", "You're happy with the result, but everyone is tired..."},
+			Narrative: []string{"You take on the next item on the roadmap...\n\nYou're happy with the result, but everyone is tired..."},
 			Effect: func(s *model.State, _ logic.Context) logic.Change {
 				teamSize := len(s.Party.Members)
 				return logic.Change{
@@ -70,7 +70,7 @@ func actionData() map[model.Action]ActionData {
 		},
 		model.ActionMarket: {
 			Desc:      "Marketing push (increase hype, costs cash and coffee)",
-			Narrative: []string{"You launch a marketing campaign...", "Every \"debate\" on X is about your product."},
+			Narrative: []string{"You launch a marketing campaign...\n\nEvery \"debate\" on X is about your product."},
 			Effect: func(s *model.State, _ logic.Context) logic.Change {
 				teamSize := len(s.Party.Members)
 				return logic.Change{

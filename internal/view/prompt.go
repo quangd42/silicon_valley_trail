@@ -25,11 +25,9 @@ type PromptView struct {
 func DayPrompt(def *gamedef.Definition) PromptView {
 	return PromptView{Sections: []PromptSectionView{
 		{
-			Label: "Actions:",
 			Items: actionItems(def, def.ActionOrder),
 		},
 		{
-			Label: "Controls:",
 			Items: controlItems([]model.Control{
 				model.ControlSave,
 				model.ControlQuitToMenu,
@@ -45,7 +43,6 @@ func EventChoicePrompt(event gamedef.EventData) PromptView {
 			Items: eventChoiceItems(event.Choices),
 		},
 		{
-			Label: "Controls:",
 			Items: controlItems([]model.Control{
 				model.ControlSave,
 				model.ControlQuitToMenu,

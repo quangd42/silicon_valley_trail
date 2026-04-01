@@ -25,7 +25,8 @@ func eventData() []EventData {
 			Name: "We meet again!",
 			Narrative: Narrative{
 				"A cheery disheveled fellow approaches you gleefully. You do not know this man.",
-				`"It's me, Ranwid! Have any goods for me today? The usual? A fella like me can't make it alone, you know?`,
+				`"It's me, Ranwid! Have any goods for me today? The usual? A fella like me can't
+make it alone, you know?"`,
 				"You eye him suspiciously and consider your options...",
 			},
 			ChoicesLabel: "Give...",

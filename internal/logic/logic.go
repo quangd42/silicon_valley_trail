@@ -9,13 +9,20 @@ type RNG interface {
 }
 
 type Result struct {
-	Action       model.Action
-	Delta        model.Resources
-	Weather      model.WeatherKind
-	WeatherDelta model.Resources
+	Delta model.Resources
 	// CurrentLocation will always >= 1 after a Travel action, so we're reusing
 	// default value 0 as sentinel value for "did not travel".
 	CurrentLocation int
+}
+
+type ActionResult struct {
+	Result
+	Weather      model.WeatherKind
+	WeatherDelta model.Resources
+}
+
+type EventResult struct {
+	Result
 }
 
 type Context struct {
@@ -32,8 +39,7 @@ type Change struct {
 
 func (c Change) Apply(s *model.State) Result {
 	out := Result{
-		Delta:   c.Delta,
-		Weather: s.Weather,
+		Delta: c.Delta,
 	}
 	if c.MoveLocation != 0 {
 		s.CurrentLocation += c.MoveLocation
@@ -56,13 +62,30 @@ func mergeChanges(changes ...Change) Change {
 	return out
 }
 
+func applyChanges(s *model.State, changes ...Change) Result {
+	change := mergeChanges(changes...)
+	out := change.Apply(s)
+	updateMetaChanges(s)
+	return out
+}
+
+// Generic name because this is the natural place to keep track of all
+// side effects
+func updateMetaChanges(s *model.State) {
+	if s.Resources.Coffee == 0 {
+		s.NoCoffeeDayCount++
+	} else {
+		s.NoCoffeeDayCount = 0
+	}
+}
+
 func ApplyActionEffects(
 	s *model.State,
 	action model.Action,
 	actionEffect Effect,
 	weatherEffect Effect,
 	_ RNG,
-) Result {
+) ActionResult {
 	if actionEffect == nil {
 		panic("missing action effect")
 	}
@@ -75,17 +98,22 @@ func ApplyActionEffects(
 	if weatherEffect != nil {
 		weatherChange = weatherEffect(s, ctx)
 	}
-	merged := mergeChanges(actionChange, weatherChange)
-	out := merged.Apply(s)
-	out.Action = action
-	out.Weather = s.Weather
-	out.WeatherDelta = weatherChange.Delta
-	if s.Resources.Coffee == 0 {
-		s.NoCoffeeDayCount++
-	} else {
-		s.NoCoffeeDayCount = 0
+	res := applyChanges(s, actionChange, weatherChange)
+	return ActionResult{
+		Result:       res,
+		Weather:      s.Weather,
+		WeatherDelta: weatherChange.Delta,
 	}
-	return out
+}
+
+func ApplyEventChoiceEffect(s *model.State, effect Effect) EventResult {
+	if effect == nil {
+		panic("missing event choice effect")
+	}
+
+	ctx := Context{}
+	change := effect(s, ctx)
+	return EventResult{Result: change.Apply(s)}
 }
 
 type Ending int
