@@ -1,10 +1,12 @@
 package logic
 
 import (
-	"math/rand"
-
 	"github.com/quangd42/silicon_valley_trail/internal/model"
 )
+
+type RNG interface {
+	IntN(int) int
+}
 
 type ActionResult struct {
 	Action       model.Action
@@ -130,7 +132,8 @@ func EvaluateEnding(s *model.State) Ending {
 	return EndingNone
 }
 
-func resolveFinalPitch(s *model.State, finalPitchRoll int) Ending {
+func resolveFinalPitch(s *model.State, rng RNG) Ending {
+	finalPitchRoll := rng.IntN(100)
 	offerThreshold := (s.Resources.Product + s.Resources.Hype/2)
 	if finalPitchRoll < offerThreshold {
 		return EndingAlone
@@ -138,10 +141,10 @@ func resolveFinalPitch(s *model.State, finalPitchRoll int) Ending {
 	return EndingNoOffer
 }
 
-func ResolveFinalEnding(s *model.State) Ending {
+func ResolveFinalEnding(s *model.State, rng RNG) Ending {
 	ending := EvaluateEnding(s)
 	if ending != EndingNone {
 		return ending
 	}
-	return resolveFinalPitch(s, rand.Intn(100))
+	return resolveFinalPitch(s, rng)
 }

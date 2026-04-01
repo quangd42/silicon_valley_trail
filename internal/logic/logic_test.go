@@ -495,6 +495,14 @@ func TestEvaluateEnding(t *testing.T) {
 	}
 }
 
+type Rand struct {
+	roll int
+}
+
+func (r Rand) IntN(_ int) int {
+	return r.roll
+}
+
 func TestResolveFinalPitch(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -530,7 +538,7 @@ func TestResolveFinalPitch(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got := resolveFinalPitch(&tc.state, tc.roll)
+			got := resolveFinalPitch(&tc.state, Rand{roll: tc.roll})
 			if got != tc.want {
 				t.Fatalf("resolveFinalPitch() = %v, want %v", got, tc.want)
 			}

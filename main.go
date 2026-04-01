@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+	"math/rand/v2"
 	"os"
+	"time"
 
 	"github.com/quangd42/silicon_valley_trail/internal/config"
 	"github.com/quangd42/silicon_valley_trail/internal/content"
@@ -20,11 +22,16 @@ func main() {
 	renderer := ui.NewTerminal(os.Stdin, os.Stdout)
 	saver := save.NewJSONSaver(cfg.SavePath)
 	weather := weather.NewWeatherService(cfg.WeatherAPIKey, cfg.WeatherAPIUseMock, cfg.WeatherAPITimeout)
+	rng := rand.New(rand.NewPCG(
+		uint64(time.Now().UnixNano()),
+		uint64(time.Now().UnixNano()),
+	))
 	gameCopy := content.Load()
-	program.Run(
+	program.New(
 		renderer,
 		saver,
 		weather,
+		rng,
 		gameCopy,
-	)
+	).Run()
 }

@@ -32,57 +32,71 @@ type WeatherProvider interface {
 	WeatherAt(context.Context, model.Location) (model.WeatherKind, error)
 }
 
-func Run(
+type Program struct {
+	renderer Renderer
+	saver    Saver
+	weather  WeatherProvider
+	rng      logic.RNG
+	content  *content.Content
+	exit     func(int)
+}
+
+func New(
 	renderer Renderer,
 	saver Saver,
 	weather WeatherProvider,
+	rng logic.RNG,
 	cont *content.Content,
-) {
+) *Program {
+	return &Program{
+		renderer: renderer,
+		saver:    saver,
+		weather:  weather,
+		rng:      rng,
+		content:  cont,
+		exit:     os.Exit,
+	}
+}
+
+func (p *Program) Run() {
 	for {
-		selection := renderer.RenderMainMenu(view.MainMenu())
+		selection := p.renderer.RenderMainMenu(view.MainMenu())
 		if selection.Kind {
 			panic("in-game action on main menu")
 		}
 		switch selection.Control {
 		case model.ControlNewGame:
-			newGame(renderer, saver, weather, cont)
+			p.newGame()
 		case model.ControlLoad:
-			loadGame(renderer, saver, weather, cont)
+			p.loadGame()
 		case model.ControlQuitGame:
-			quitGame(renderer)
+			p.quitGame()
 		default:
 			panic("invalid game session control on main menu")
 		}
 	}
 }
 
-func startGame(
-	rndr Renderer,
-	saver Saver,
-	weather WeatherProvider,
-	cont *content.Content,
-	state *model.State,
-	new bool,
-) {
-	rndr.ClearScreen()
-	if new {
-		rndr.RenderIntro(view.IntroView(cont.Intro))
+func (p *Program) startGame(state *model.State, isNew bool) {
+	p.renderer.ClearScreen()
+	if isNew {
+		p.renderer.RenderIntro(view.IntroView(p.content.Intro))
 	}
 	for state.CurrentLocation < len(state.Route)-1 {
-		refreshWeather(state, weather)
-		rndr.RenderDay(view.Day(state, cont))
-		selection := rndr.PromptSelection(view.InGamePrompt(cont))
+		p.refreshWeather(state)
+		p.renderer.RenderDay(view.Day(state, p.content))
+		selection := p.renderer.PromptSelection(view.InGamePrompt(p.content))
 		if selection.Kind {
 			res := logic.ApplyAction(state, selection.Action)
-			rndr.RenderActionResult(view.ActionResult(res, cont))
+			p.renderer.RenderActionResult(view.ActionResult(res, p.content))
 		} else {
 			switch selection.Control {
 			case model.ControlSave:
-				saveGame(rndr, saver, state)
+				p.saveGame(state)
 			case model.ControlQuitToMenu:
 				// simply return from the game loop because we're
 				// already in the main menu loop
-				rndr.ClearScreen()
+				p.renderer.ClearScreen()
 				return
 			default:
 				panic("invalid game session control")
@@ -90,66 +104,56 @@ func startGame(
 		}
 		ending := logic.EvaluateEnding(state)
 		if ending != logic.EndingNone {
-			rndr.RenderEnding(view.Ending(ending, cont))
+			p.renderer.RenderEnding(view.Ending(ending, p.content))
 			return
 		}
 	}
 
-	ending := logic.ResolveFinalEnding(state)
-	rndr.RenderEnding(view.Ending(ending, cont))
+	ending := logic.ResolveFinalEnding(state, p.rng)
+	p.renderer.RenderEnding(view.Ending(ending, p.content))
 }
 
-func newGame(
-	rndr Renderer,
-	saver Saver,
-	weather WeatherProvider,
-	cont *content.Content,
-) {
+func (p *Program) newGame() {
 	state := model.NewState(content.DefaultRoute())
-	startGame(rndr, saver, weather, cont, state, true)
+	p.startGame(state, true)
 }
 
-func loadGame(
-	rndr Renderer,
-	saver Saver,
-	weather WeatherProvider,
-	cont *content.Content,
-) error {
+func (p *Program) loadGame() error {
 	var state model.State
-	err := saver.Load(&state)
+	err := p.saver.Load(&state)
 	if err != nil {
-		rndr.RenderInfo(fmt.Sprintf("Failed to load game: %s", err.Error()))
+		p.renderer.RenderInfo(fmt.Sprintf("Failed to load game: %s", err.Error()))
 		return err
 	}
-	startGame(rndr, saver, weather, cont, &state, false)
+	p.startGame(&state, false)
 	return nil
 }
 
-func saveGame(
-	rndr Renderer,
-	saver Saver,
-	state *model.State,
-) {
-	err := saver.Save(state)
+func (p *Program) saveGame(state *model.State) {
+	err := p.saver.Save(state)
 	if err != nil {
-		rndr.RenderInfo(fmt.Sprintf("Failed to save game: %s", err.Error()))
+		p.renderer.RenderInfo(fmt.Sprintf("Failed to save game: %s", err.Error()))
 		return
 	}
-	rndr.RenderInfo("Game saved.")
+	p.renderer.RenderInfo("Game saved.")
 }
 
-func quitGame(rndr Renderer) {
-	rndr.RenderInfoNoWait("Bye!")
-	os.Exit(0)
+func (p *Program) quitGame() {
+	p.renderer.RenderInfoNoWait("Bye!")
+	exit := p.exit
+	if exit == nil {
+		exit = os.Exit
+	}
+	exit(0)
 }
 
-func refreshWeather(state *model.State, svc WeatherProvider) {
-	if svc == nil || len(state.Route) == 0 {
+func (p *Program) refreshWeather(state *model.State) {
+	if p.weather == nil || len(state.Route) == 0 {
 		state.Weather = model.WeatherUnknown
 		return
 	}
 
-	weather, err := svc.WeatherAt(context.Background(), state.Route[state.CurrentLocation])
+	weather, err := p.weather.WeatherAt(context.Background(), state.Route[state.CurrentLocation])
 	if err != nil {
 		state.Weather = model.WeatherUnknown
 		return
