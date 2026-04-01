@@ -1,4 +1,4 @@
-package content
+package gamedef
 
 import (
 	"github.com/quangd42/silicon_valley_trail/internal/logic"

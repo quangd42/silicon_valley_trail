@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/quangd42/silicon_valley_trail/internal/content"
+	"github.com/quangd42/silicon_valley_trail/internal/gamedef"
 	"github.com/quangd42/silicon_valley_trail/internal/logic"
 	"github.com/quangd42/silicon_valley_trail/internal/model"
 	"github.com/quangd42/silicon_valley_trail/internal/view"
@@ -37,7 +37,7 @@ type Program struct {
 	saver    Saver
 	weather  WeatherProvider
 	rng      logic.RNG
-	content  *content.Content
+	def      *gamedef.Definition
 	exit     func(int)
 }
 
@@ -46,14 +46,14 @@ func New(
 	saver Saver,
 	weather WeatherProvider,
 	rng logic.RNG,
-	cont *content.Content,
+	def *gamedef.Definition,
 ) *Program {
 	return &Program{
 		renderer: renderer,
 		saver:    saver,
 		weather:  weather,
 		rng:      rng,
-		content:  cont,
+		def:      def,
 		exit:     os.Exit,
 	}
 }
@@ -80,15 +80,15 @@ func (p *Program) Run() {
 func (p *Program) startGame(state *model.State, isNew bool) {
 	p.renderer.ClearScreen()
 	if isNew {
-		p.renderer.RenderIntro(view.IntroView(p.content.Intro))
+		p.renderer.RenderIntro(view.IntroView(p.def.Intro))
 	}
 	for state.CurrentLocation < len(state.Route)-1 {
 		p.refreshWeather(state)
-		p.renderer.RenderDay(view.Day(state, p.content))
-		selection := p.renderer.PromptSelection(view.InGamePrompt(p.content))
+		p.renderer.RenderDay(view.Day(state, p.def))
+		selection := p.renderer.PromptSelection(view.InGamePrompt(p.def))
 		if selection.Kind {
 			res := p.applyAction(state, selection.Action)
-			p.renderer.RenderActionResult(view.ActionResult(res, p.content))
+			p.renderer.RenderActionResult(view.ActionResult(res, p.def))
 		} else {
 			switch selection.Control {
 			case model.ControlSave:
@@ -104,17 +104,17 @@ func (p *Program) startGame(state *model.State, isNew bool) {
 		}
 		ending := logic.EvaluateEnding(state)
 		if ending != logic.EndingNone {
-			p.renderer.RenderEnding(view.Ending(ending, p.content))
+			p.renderer.RenderEnding(view.Ending(ending, p.def))
 			return
 		}
 	}
 
 	ending := logic.ResolveFinalEnding(state, p.rng)
-	p.renderer.RenderEnding(view.Ending(ending, p.content))
+	p.renderer.RenderEnding(view.Ending(ending, p.def))
 }
 
 func (p *Program) newGame() {
-	state := model.NewState(content.DefaultRoute())
+	state := model.NewState(gamedef.DefaultRoute())
 	p.startGame(state, true)
 }
 
@@ -162,8 +162,8 @@ func (p *Program) refreshWeather(state *model.State) {
 }
 
 func (p *Program) applyAction(state *model.State, action model.Action) logic.Result {
-	actionDef := p.content.Actions[action]
-	weatherDef := p.content.Weather[state.Weather]
+	actionDef := p.def.Actions[action]
+	weatherDef := p.def.Weather[state.Weather]
 	return logic.ApplyActionEffects(
 		state,
 		action,

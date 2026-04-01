@@ -1,11 +1,12 @@
-package content
+// Package gamedef defines the authored game data and scripted effects.
+package gamedef
 
 import (
 	"github.com/quangd42/silicon_valley_trail/internal/logic"
 	"github.com/quangd42/silicon_valley_trail/internal/model"
 )
 
-type Content struct {
+type Definition struct {
 	Intro   []string
 	Route   []model.Location
 	Actions map[model.Action]ActionData
@@ -13,10 +14,9 @@ type Content struct {
 	Endings map[logic.Ending]EndingCopy
 }
 
-// Load returns the structured copy pool for the entire game.
-// Later on it can be improved to orchestrate fetching content from different sources.
-func Load() *Content {
-	return &Content{
+// Load returns the authored game definition.
+func Load() *Definition {
+	return &Definition{
 		Intro:   introCopy(),
 		Route:   DefaultRoute(),
 		Actions: actionData(),

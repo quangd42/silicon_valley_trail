@@ -1,7 +1,7 @@
 package view
 
 import (
-	"github.com/quangd42/silicon_valley_trail/internal/content"
+	"github.com/quangd42/silicon_valley_trail/internal/gamedef"
 	"github.com/quangd42/silicon_valley_trail/internal/logic"
 	"github.com/quangd42/silicon_valley_trail/internal/model"
 )
@@ -16,7 +16,7 @@ type DayView struct {
 	WeatherImpact string
 }
 
-func Day(s *model.State, c *content.Content) DayView {
+func Day(s *model.State, def *gamedef.Definition) DayView {
 	return DayView{
 		Day:           s.Day,
 		Resources:     s.Resources,
@@ -24,7 +24,7 @@ func Day(s *model.State, c *content.Content) DayView {
 		Location:      s.Route[s.CurrentLocation],
 		Progress:      (s.CurrentLocation + 1) * 100 / len(s.Route),
 		Weather:       s.Weather,
-		WeatherImpact: c.Weather[s.Weather].Desc,
+		WeatherImpact: def.Weather[s.Weather].Desc,
 	}
 }
 
@@ -35,17 +35,17 @@ type ActionResultView struct {
 	Weather      model.WeatherKind
 }
 
-func ActionResult(ar logic.Result, c *content.Content) ActionResultView {
+func ActionResult(ar logic.Result, def *gamedef.Definition) ActionResultView {
 	// CurrentLocation will always >= 1 after a Travel action, so we're reusing
 	// default value 0 as sentinel value for "did not travel".
 	var locName string
 	if ar.CurrentLocation == 0 {
 		locName = ""
 	} else {
-		locName = c.Route[ar.CurrentLocation].Name
+		locName = def.Route[ar.CurrentLocation].Name
 	}
 	return ActionResultView{
-		Narative:     c.Actions[ar.Action].Narrative,
+		Narative:     def.Actions[ar.Action].Narrative,
 		Delta:        ar.Delta,
 		LocationName: locName,
 		Weather:      ar.Weather,

@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/quangd42/silicon_valley_trail/internal/content"
+	"github.com/quangd42/silicon_valley_trail/internal/gamedef"
 	"github.com/quangd42/silicon_valley_trail/internal/model"
 )
 
@@ -16,7 +16,7 @@ func TestJSONSaver(t *testing.T) {
 		savePath := filepath.Join(t.TempDir(), "save.json")
 		saver := NewJSONSaver(savePath)
 
-		state := model.NewState(content.DefaultRoute())
+		state := model.NewState(gamedef.DefaultRoute())
 		state.Day = 4
 		state.CurrentLocation = 3
 		state.Resources = model.Resources{
@@ -79,7 +79,7 @@ func TestJSONSaver(t *testing.T) {
 		savePath := filepath.Join(t.TempDir(), "save.json")
 		saver := NewJSONSaver(savePath)
 
-		first := model.NewState(content.DefaultRoute())
+		first := model.NewState(gamedef.DefaultRoute())
 		first.Day = 1
 		first.CurrentLocation = 1
 		first.Resources = model.Resources{
@@ -90,7 +90,7 @@ func TestJSONSaver(t *testing.T) {
 			Product: 23,
 		}
 
-		second := model.NewState(content.DefaultRoute())
+		second := model.NewState(gamedef.DefaultRoute())
 		second.Day = 8
 		second.CurrentLocation = 4
 		second.Resources = model.Resources{

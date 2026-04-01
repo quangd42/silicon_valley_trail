@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/quangd42/silicon_valley_trail/internal/config"
-	"github.com/quangd42/silicon_valley_trail/internal/content"
+	"github.com/quangd42/silicon_valley_trail/internal/gamedef"
 	"github.com/quangd42/silicon_valley_trail/internal/program"
 	"github.com/quangd42/silicon_valley_trail/internal/save"
 	"github.com/quangd42/silicon_valley_trail/internal/ui"
@@ -26,12 +26,12 @@ func main() {
 		uint64(time.Now().UnixNano()),
 		uint64(time.Now().UnixNano()),
 	))
-	gameCopy := content.Load()
+	def := gamedef.Load()
 	program.New(
 		renderer,
 		saver,
 		weather,
 		rng,
-		gameCopy,
+		def,
 	).Run()
 }

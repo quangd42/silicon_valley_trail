@@ -5,13 +5,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/quangd42/silicon_valley_trail/internal/content"
+	"github.com/quangd42/silicon_valley_trail/internal/gamedef"
 	"github.com/quangd42/silicon_valley_trail/internal/model"
 	"github.com/quangd42/silicon_valley_trail/internal/view"
 )
 
 func TestPromptSelection(t *testing.T) {
-	promptView := view.InGamePrompt(content.Load())
+	promptView := view.InGamePrompt(gamedef.Load())
 
 	tests := []struct {
 		name             string
