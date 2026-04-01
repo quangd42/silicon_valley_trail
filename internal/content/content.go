@@ -1,6 +1,3 @@
-// Package content loads the game copy into a structured copy pool to use across different parts of the game.
-// It enables game copy to be loaded from a database or copy files later on. For now, it is embedded directly
-// in the code.
 package content
 
 import (
@@ -11,8 +8,8 @@ import (
 type Content struct {
 	Intro   []string
 	Route   []model.Location
-	Actions map[model.Action]ActionCopy
-	Weather map[model.WeatherKind]string
+	Actions map[model.Action]ActionData
+	Weather map[model.WeatherKind]WeatherData
 	Endings map[logic.Ending]EndingCopy
 }
 
@@ -22,7 +19,7 @@ func Load() *Content {
 	return &Content{
 		Intro:   introCopy(),
 		Route:   DefaultRoute(),
-		Actions: actionCopy(),
+		Actions: actionData(),
 		Weather: weatherCopy(),
 		Endings: endingCopy(),
 	}
@@ -83,41 +80,5 @@ func endingCopy() map[logic.Ending]EndingCopy {
 			Desc: "You won over the investors.",
 		},
 		logic.EndingTogether: {}, // To be added if we ever get there
-	}
-}
-
-type ActionCopy struct {
-	Desc      string
-	Narrative Narrative
-}
-
-func actionCopy() map[model.Action]ActionCopy {
-	return map[model.Action]ActionCopy{
-		model.ActionTravel: {
-			Desc:      "Travel to the next location (costs cash, coffee, and morale)",
-			Narrative: []string{"Your team hit the road..."},
-		},
-		model.ActionRest: {
-			Desc:      "Rest and recover (restore morale and coffee, costs cash)",
-			Narrative: []string{"You decided to take a break...", "...zZz...", "You feel refreshed. You're filled with determination."},
-		},
-		model.ActionBuild: {
-			Desc:      "Work on product (increase product readiness, costs coffee and morale)",
-			Narrative: []string{"You take on the next item on the roadmap...", "You're happy with the result, but everyone is tired..."},
-		},
-		model.ActionMarket: {
-			Desc:      "Marketing push (increase hype, costs cash and coffee)",
-			Narrative: []string{"You launch a marketing campaign...", "Every \"debate\" on X is about your product."},
-		},
-	}
-}
-
-func weatherCopy() map[model.WeatherKind]string {
-	return map[model.WeatherKind]string{
-		model.WeatherUnknown: "What is going on?",
-		model.WeatherClear:   "You feel productive and ready to go.\n(Build++ Travel++)",
-		model.WeatherRainy:   "It's miserable out there.\n(Travel-- Marketing--)",
-		model.WeatherFog:     "You feel unsure about the future.\n(Build-- Travel--)",
-		model.WeatherCloudy:  "Everything feels in place.\n(Rest++ Marketing++)",
 	}
 }

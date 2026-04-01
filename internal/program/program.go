@@ -87,7 +87,7 @@ func (p *Program) startGame(state *model.State, isNew bool) {
 		p.renderer.RenderDay(view.Day(state, p.content))
 		selection := p.renderer.PromptSelection(view.InGamePrompt(p.content))
 		if selection.Kind {
-			res := logic.ApplyAction(state, selection.Action)
+			res := p.applyAction(state, selection.Action)
 			p.renderer.RenderActionResult(view.ActionResult(res, p.content))
 		} else {
 			switch selection.Control {
@@ -159,4 +159,16 @@ func (p *Program) refreshWeather(state *model.State) {
 		return
 	}
 	state.Weather = weather
+}
+
+func (p *Program) applyAction(state *model.State, action model.Action) logic.Result {
+	actionDef := p.content.Actions[action]
+	weatherDef := p.content.Weather[state.Weather]
+	return logic.ApplyActionEffects(
+		state,
+		action,
+		actionDef.Effect,
+		weatherDef.Effect,
+		p.rng,
+	)
 }

@@ -31,14 +31,20 @@ func TestLoad(t *testing.T) {
 		if len(cop.Narrative) < 1 {
 			t.Fatalf("missing action narrative for action %d", action)
 		}
+		if cop.Effect == nil {
+			t.Fatalf("missing action effect for action %d", action)
+		}
 	}
 	for weather := range model.WeatherKindCount {
 		cop, ok := cont.Weather[weather]
 		if !ok {
 			t.Fatalf("missing copy for weather %d", weather)
 		}
-		if cop == "" {
-			t.Fatalf("missing copy for weather %d", weather)
+		if cop.Desc == "" {
+			t.Fatalf("missing weather desc for weather %d", weather)
+		}
+		if weather != model.WeatherUnknown && cop.Effect == nil {
+			t.Fatalf("missing weather effect for weather %d", weather)
 		}
 	}
 }

@@ -24,7 +24,7 @@ func Day(s *model.State, c *content.Content) DayView {
 		Location:      s.Route[s.CurrentLocation],
 		Progress:      (s.CurrentLocation + 1) * 100 / len(s.Route),
 		Weather:       s.Weather,
-		WeatherImpact: c.Weather[s.Weather],
+		WeatherImpact: c.Weather[s.Weather].Desc,
 	}
 }
 
@@ -35,7 +35,7 @@ type ActionResultView struct {
 	Weather      model.WeatherKind
 }
 
-func ActionResult(ar logic.ActionResult, c *content.Content) ActionResultView {
+func ActionResult(ar logic.Result, c *content.Content) ActionResultView {
 	// CurrentLocation will always >= 1 after a Travel action, so we're reusing
 	// default value 0 as sentinel value for "did not travel".
 	var locName string
