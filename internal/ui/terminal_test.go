@@ -10,8 +10,9 @@ import (
 	"github.com/quangd42/silicon_valley_trail/internal/view"
 )
 
-func TestPromptSelection(t *testing.T) {
-	promptView := view.InGamePrompt(gamedef.Load())
+func TestRenderPrompt(t *testing.T) {
+	def := gamedef.Load()
+	promptView := view.DayPrompt(def)
 
 	tests := []struct {
 		name             string
@@ -24,7 +25,7 @@ func TestPromptSelection(t *testing.T) {
 			name:  "select first action",
 			input: "1\n",
 			wantChoice: model.PromptChoice{
-				Kind:   true,
+				Kind:   model.ChoiceAction,
 				Action: model.ActionTravel,
 			},
 			wantSubstrings: []string{
@@ -39,7 +40,7 @@ func TestPromptSelection(t *testing.T) {
 			name:  "select last action",
 			input: "4\n",
 			wantChoice: model.PromptChoice{
-				Kind:   true,
+				Kind:   model.ChoiceAction,
 				Action: model.ActionMarket,
 			},
 			wantSubstrings: []string{
@@ -51,7 +52,7 @@ func TestPromptSelection(t *testing.T) {
 			name:  "select first control",
 			input: "5\n",
 			wantChoice: model.PromptChoice{
-				Kind:    false,
+				Kind:    model.ChoiceControl,
 				Control: model.ControlSave,
 			},
 			wantSubstrings: []string{
@@ -64,7 +65,7 @@ func TestPromptSelection(t *testing.T) {
 			name:  "invalid input retries before selecting control",
 			input: "abc\n9\n6\n",
 			wantChoice: model.PromptChoice{
-				Kind:    false,
+				Kind:    model.ChoiceControl,
 				Control: model.ControlQuitToMenu,
 			},
 			wantSubstrings: []string{
@@ -80,7 +81,7 @@ func TestPromptSelection(t *testing.T) {
 			var b bytes.Buffer
 			term := NewTerminal(reader, &b)
 
-			gotChoice := term.PromptSelection(promptView)
+			gotChoice := term.RenderPrompt(promptView)
 			if gotChoice != tt.wantChoice {
 				t.Fatalf("want choice %#v, got choice %#v", tt.wantChoice, gotChoice)
 			}

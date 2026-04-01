@@ -156,16 +156,26 @@ func (c Control) String() string {
 	}
 }
 
-// PromptChoice is the type of the result of `PromptSelection()`. It is a poor man's tagged
-// union, to distinguish if the user has chosen an in-game action or a game session control.
-// Even though it is defined here, its existence comes from the fact that we unfortunately
-// have to mix those two choices in the same input interface in the CLI UI representation,
-// and it will need to be refactored if we ever add another UI.
+// PromptChoice is the type of the data returned from prompting the player. It is a discriminated
+// struct, to distinguish if the user has chosen an in-game action, event choice or a game session
+// control. Even though it is defined here, its existence comes from the fact that we unfortunately
+// have to mix those choices in the same input interface in the CLI UI representation, and it will
+// need to be refactored if we ever add another UI renderer.
 //
-// When `Kind` = true, `Action` is set, otherwise `Control` is set. Accessing the unset
-// field does not panic, simply returns the default (and wrong) value.
+// When `Kind` = `ChoiceEvent`, `PromptChoice.EventChoiceIndex` is set to the index of the
+// selected `EventChoice` in the current event.
+// Accessing the unset field does not panic, simply returns the default (and wrong) value.
 type PromptChoice struct {
-	Kind    bool // true = Action, false = Control
-	Action  Action
-	Control Control
+	Kind             ChoiceKind
+	Action           Action
+	Control          Control
+	EventChoiceIndex int
 }
+
+type ChoiceKind int
+
+const (
+	ChoiceControl ChoiceKind = iota
+	ChoiceAction
+	ChoiceEvent
+)

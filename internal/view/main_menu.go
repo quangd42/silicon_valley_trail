@@ -2,12 +2,17 @@ package view
 
 import "github.com/quangd42/silicon_valley_trail/internal/model"
 
-func MainMenu() PromptView {
+func MainMenuPrompt() PromptView {
 	return PromptView{
-		Controls: []model.Control{
-			model.ControlNewGame,
-			model.ControlLoad,
-			model.ControlQuitGame,
+		Title: "SILICON VALLEY TRAIL - Main Menu",
+		Sections: []PromptSectionView{
+			{
+				Items: controlItems([]model.Control{
+					model.ControlNewGame,
+					model.ControlLoad,
+					model.ControlQuitGame,
+				}),
+			},
 		},
 	}
 }

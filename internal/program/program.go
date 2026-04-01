@@ -12,10 +12,9 @@ import (
 )
 
 type Renderer interface {
-	RenderMainMenu(view.PromptView) model.PromptChoice
 	RenderIntro(view.IntroView)
-	RenderDay(view.DayView)
-	PromptSelection(view.PromptView) model.PromptChoice
+	RenderDayInfo(view.DayView)
+	RenderPrompt(view.PromptView) model.PromptChoice
 	RenderActionResult(view.ActionResultView)
 	RenderInfo(string)
 	RenderInfoNoWait(string)
@@ -60,8 +59,8 @@ func New(
 
 func (p *Program) Run() {
 	for {
-		selection := p.renderer.RenderMainMenu(view.MainMenu())
-		if selection.Kind {
+		selection := p.renderer.RenderPrompt(view.MainMenuPrompt())
+		if selection.Kind != model.ChoiceControl {
 			panic("in-game action on main menu")
 		}
 		switch selection.Control {
@@ -84,9 +83,9 @@ func (p *Program) startGame(state *model.State, isNew bool) {
 	}
 	for state.CurrentLocation < len(state.Route)-1 {
 		p.refreshWeather(state)
-		p.renderer.RenderDay(view.Day(state, p.def))
-		selection := p.renderer.PromptSelection(view.InGamePrompt(p.def))
-		if selection.Kind {
+		p.renderer.RenderDayInfo(view.Day(state, p.def))
+		selection := p.renderer.RenderPrompt(view.DayPrompt(p.def))
+		if selection.Kind == model.ChoiceAction {
 			res := p.applyAction(state, selection.Action)
 			p.renderer.RenderActionResult(view.ActionResult(res, p.def))
 		} else {

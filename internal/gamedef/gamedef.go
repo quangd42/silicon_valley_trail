@@ -7,26 +7,32 @@ import (
 )
 
 type Definition struct {
-	Intro   []string
-	Route   []model.Location
-	Actions map[model.Action]ActionData
-	Weather map[model.WeatherKind]WeatherData
-	Endings map[logic.Ending]EndingCopy
+	Intro       Narrative
+	Route       []model.Location
+	Actions     map[model.Action]ActionData
+	ActionOrder []model.Action
+	Weather     map[model.WeatherKind]WeatherData
+	Events      []EventData
+	Endings     map[logic.Ending]EndingCopy
 }
+
+type Narrative []string
 
 // Load returns the authored game definition.
 func Load() *Definition {
 	return &Definition{
-		Intro:   introCopy(),
-		Route:   DefaultRoute(),
-		Actions: actionData(),
-		Weather: weatherCopy(),
-		Endings: endingCopy(),
+		Intro:       introCopy(),
+		Route:       DefaultRoute(),
+		Actions:     actionData(),
+		ActionOrder: actionOrder(),
+		Weather:     weatherCopy(),
+		Events:      eventData(),
+		Endings:     endingCopy(),
 	}
 }
 
-func introCopy() []string {
-	return []string{
+func introCopy() Narrative {
+	return Narrative{
 		`Welcome to Silicon Valley Trail!
 
 You and your best bud Pete set out from your HQ in San Jose to San Francisco to attend a
@@ -43,11 +49,9 @@ Will you be able to impress the investors?`,
 	}
 }
 
-type Narrative []string
-
 type EndingCopy struct {
 	Narrative Narrative
-	Desc      string
+	Explain   string
 }
 
 func endingCopy() map[logic.Ending]EndingCopy {
@@ -55,11 +59,11 @@ func endingCopy() map[logic.Ending]EndingCopy {
 		logic.EndingNone: {}, // This is just a placeholder, this is not a real ending
 		logic.EndingNoCash: {
 			Narrative: Narrative{"You have just enough to catch a train home. Time for some part-time jobs..."},
-			Desc:      "You have no cash left.",
+			Explain:   "You have no cash left.",
 		},
 		logic.EndingNoCoffee: {
 			Narrative: Narrative{"*Confused Psyduck*."},
-			Desc:      "You have no coffee for far too long.",
+			Explain:   "You have no coffee for far too long.",
 		},
 		logic.EndingNoOffer: {
 			Narrative: Narrative{
@@ -68,7 +72,7 @@ func endingCopy() map[logic.Ending]EndingCopy {
 				"...",
 				"Maybe you got here too early.",
 			},
-			Desc: "The investors turned you down.",
+			Explain: "The investors turned you down.",
 		},
 		logic.EndingAlone: {
 			Narrative: Narrative{
@@ -77,7 +81,7 @@ func endingCopy() map[logic.Ending]EndingCopy {
 				"...",
 				"But what did it cost?",
 			},
-			Desc: "You won over the investors.",
+			Explain: "You won over the investors.",
 		},
 		logic.EndingTogether: {}, // To be added if we ever get there
 	}

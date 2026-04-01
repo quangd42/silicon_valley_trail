@@ -11,6 +11,15 @@ type ActionData struct {
 	Effect    logic.Effect
 }
 
+func actionOrder() []model.Action {
+	return []model.Action{
+		model.ActionTravel,
+		model.ActionRest,
+		model.ActionBuild,
+		model.ActionMarket,
+	}
+}
+
 func actionData() map[model.Action]ActionData {
 	return map[model.Action]ActionData{
 		model.ActionTravel: {

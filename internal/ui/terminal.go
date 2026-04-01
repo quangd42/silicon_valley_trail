@@ -17,6 +17,7 @@ import (
 var (
 	thickSep = []byte(strings.Repeat("=", 80))
 	thinSep  = []byte(strings.Repeat("-", 80))
+	alertSep = []byte(strings.Repeat("!", 80))
 )
 
 type Terminal struct {
@@ -33,13 +34,6 @@ func NewTerminal(in io.Reader, out io.Writer) *Terminal {
 	}
 }
 
-func (t *Terminal) RenderMainMenu(v view.PromptView) model.PromptChoice {
-	t.thickSep()
-	t.out.WriteString("SILICON VALLEY TRAIL - Main Menu\n")
-	t.thickSep()
-	return t.PromptSelection(v)
-}
-
 func (t *Terminal) RenderIntro(v view.IntroView) {
 	t.renderNarrative(v)
 	t.thinSep()
@@ -50,7 +44,7 @@ func (t *Terminal) RenderIntro(v view.IntroView) {
 	t.ClearScreen()
 }
 
-func (t *Terminal) RenderDay(v view.DayView) {
+func (t *Terminal) RenderDayInfo(v view.DayView) {
 	t.thickSep()
 	t.fmt.Fprintf(t.out, "Day %d | %s\n", v.Day, v.Location.Name)
 	t.fmt.Fprintf(t.out, "%s\n", v.Location.Desc)
@@ -67,34 +61,35 @@ func (t *Terminal) RenderDay(v view.DayView) {
 	t.out.Flush()
 }
 
-func (t *Terminal) renderActions(v []view.ActionView, label string) {
-	t.out.WriteString(label)
-	for i, action := range v {
-		t.fmt.Fprintf(t.out, "%d. %s\n", i+1, action.Desc)
+func (t *Terminal) RenderPrompt(v view.PromptView) model.PromptChoice {
+	if v.Title != "" {
+		t.thickSep()
+		t.out.WriteString(v.Title)
+		t.linefeed()
+		t.thickSep()
 	}
-	t.linefeed()
+	choices := make([]model.PromptChoice, 0)
+	for _, section := range v.Sections {
+		if len(section.Items) == 0 {
+			continue
+		}
+		if section.Label != "" {
+			t.out.WriteString(section.Label)
+			t.linefeed()
+		}
+		for _, item := range section.Items {
+			choices = append(choices, item.Choice)
+			t.fmt.Fprintf(t.out, "%d. %s\n", len(choices), item.Text)
+		}
+		t.linefeed()
+	}
+	choice := t.readPromptSelection(len(choices))
+	return choices[choice-1]
 }
 
-func (t *Terminal) renderControls(v []model.Control, label string, start int) {
-	t.out.WriteString(label)
-	for i, control := range v {
-		t.fmt.Fprintf(t.out, "%d. %s\n", i+start+1, control)
-	}
-	t.linefeed()
-}
-
-func (t *Terminal) PromptSelection(v view.PromptView) model.PromptChoice {
-	actionCount := len(v.Actions)
-	controlCount := len(v.Controls)
-	if actionCount > 0 {
-		t.renderActions(v.Actions, v.ActionsLabel)
-	}
-	if controlCount > 0 {
-		t.renderControls(v.Controls, v.ControlsLabel, actionCount)
-	}
-	totalCount := actionCount + controlCount
+func (t *Terminal) readPromptSelection(totalCount int) int {
 	if totalCount == 0 {
-		panic("prompt view has no choice to render")
+		panic("no choice to render")
 	}
 	for {
 		t.fmt.Fprintf(t.out, "Enter choice (1-%d): ", totalCount)
@@ -107,26 +102,20 @@ func (t *Terminal) PromptSelection(v view.PromptView) model.PromptChoice {
 			continue
 		}
 		choice, err := strconv.Atoi(strings.TrimSpace(input))
-		if err != nil {
+		if err != nil || choice < 1 || choice > totalCount {
 			t.out.WriteString("Invalid input. ")
 			continue
 		}
-		switch {
-		case choice >= 1 && choice <= actionCount:
-			return model.PromptChoice{
-				Kind:   true,
-				Action: v.Actions[choice-1].Kind,
-			}
-		case choice > actionCount && choice <= actionCount+controlCount:
-			return model.PromptChoice{
-				Kind:    false,
-				Control: v.Controls[choice-1-actionCount],
-			}
-		default:
-			t.out.WriteString("Invalid input. ")
-			continue
-		}
+		return choice
 	}
+}
+
+func (t *Terminal) RenderActionResult(v view.ActionResultView) {
+	t.thinSep()
+	t.renderNarrative(v.Narative)
+	t.thinSep()
+	t.renderImpact(v.LocationName, v.Delta)
+	t.ClearScreen()
 }
 
 func (t *Terminal) renderImpact(location string, delta model.Resources) {
@@ -160,31 +149,6 @@ func (t *Terminal) renderImpact(location string, delta model.Resources) {
 	t.waitForEnterMsg(t.fmt.Sprintf("(%s)", strings.Join(parts, ". ")))
 }
 
-func (t *Terminal) renderNarrative(v []string) {
-	l := len(v)
-	if l == 0 {
-		return
-	}
-	for _, line := range v[:l-1] {
-		t.out.WriteString(line)
-		t.linefeed()
-		t.linefeed()
-		t.waitForEnter()
-		t.clearLine()
-	}
-	t.out.WriteString(v[l-1])
-	t.linefeed()
-	t.out.Flush()
-}
-
-func (t *Terminal) RenderActionResult(v view.ActionResultView) {
-	t.thinSep()
-	t.renderNarrative(v.Narative)
-	t.thinSep()
-	t.renderImpact(v.LocationName, v.Delta)
-	t.ClearScreen()
-}
-
 func (t *Terminal) RenderInfo(msg string) {
 	t.thinSep()
 	t.out.WriteString(msg)
@@ -205,10 +169,27 @@ func (t *Terminal) RenderInfoNoWait(msg string) {
 func (t *Terminal) RenderEnding(v view.EndingView) {
 	t.thickSep()
 	t.renderNarrative(v.Narrative)
-	t.fmt.Fprintf(t.out, "(%s)\n", v.Desc)
+	t.fmt.Fprintf(t.out, "(%s)\n", v.Explain)
 	t.thickSep()
 	t.waitForEnterMsg("Game over. Press Enter to get back to main menu...")
 	t.ClearScreen()
+}
+
+func (t *Terminal) renderNarrative(v []string) {
+	l := len(v)
+	if l == 0 {
+		return
+	}
+	for _, line := range v[:l-1] {
+		t.out.WriteString(line)
+		t.linefeed()
+		t.linefeed()
+		t.waitForEnter()
+		t.clearLine()
+	}
+	t.out.WriteString(v[l-1])
+	t.linefeed()
+	t.out.Flush()
 }
 
 func (t *Terminal) waitForEnterMsg(msg string) {
@@ -239,6 +220,11 @@ func (t *Terminal) thickSep() {
 
 func (t *Terminal) thinSep() {
 	t.out.Write(thinSep)
+	t.linefeed()
+}
+
+func (t *Terminal) alertSep() {
+	t.out.Write(alertSep)
 	t.linefeed()
 }
 

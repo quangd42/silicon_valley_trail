@@ -20,6 +20,9 @@ func TestLoad(t *testing.T) {
 	if len(def.Actions) != int(model.ActionCount) {
 		t.Fatalf("count of available actions: %d\ncount of defined actions: %d", model.ActionCount, len(def.Actions))
 	}
+	if len(def.ActionOrder) != int(model.ActionCount) {
+		t.Fatalf("count of ordered actions: %d\ncount of defined actions: %d", len(def.ActionOrder), model.ActionCount)
+	}
 	for action := range model.ActionCount {
 		actionDef, ok := def.Actions[action]
 		if !ok {
@@ -33,6 +36,11 @@ func TestLoad(t *testing.T) {
 		}
 		if actionDef.Effect == nil {
 			t.Fatalf("missing action effect for action %d", action)
+		}
+	}
+	for i, action := range def.ActionOrder {
+		if _, ok := def.Actions[action]; !ok {
+			t.Fatalf("action order index %d references undefined action %d", i, action)
 		}
 	}
 	for weather := range model.WeatherKindCount {
