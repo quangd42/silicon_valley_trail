@@ -88,15 +88,15 @@ func (p *Program) startGame(state *model.State, isNew bool) {
 		if turn.quitToMenu {
 			return
 		}
+		if p.evaluateEnding(state) {
+			return
+		}
 		if turn.traveled {
 			// Event has a chance to play out after arriving at a new location
 			// (beginning of a new day/turn).
 			if p.playEvent(state) {
 				return
 			}
-		}
-		if p.evaluateEnding(state) {
-			return
 		}
 	}
 

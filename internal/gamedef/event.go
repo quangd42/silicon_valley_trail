@@ -32,8 +32,8 @@ make it alone, you know?"`,
 			ChoicesLabel: "Give...",
 			Choices: []EventChoiceData{
 				{
-					Name: "...some coffee.",
-					Desc: "-2 Coffee, +10 Hype",
+					Name: "some coffee.",
+					Desc: "-2 Coffee, +15 Hype",
 					Narrative: Narrative{
 						`Ranwid: "Exquisite! Was feeling parched."
 
@@ -48,13 +48,13 @@ Ranwid: "Here, look what I've got for you today! Take it take it!"`,
 						return logic.Change{
 							Delta: model.Resources{
 								Coffee: -2,
-								Hype:   +10,
+								Hype:   +15,
 							},
 						}
 					},
 				},
 				{
-					Name: "...some money.",
+					Name: "some money.",
 					Desc: "-200 Cash, +10 Hype",
 					Narrative: Narrative{
 						`Ranwid: "Magnificent! This will be quite handy if I run into those *mask wearing hoodlums* again."`,
@@ -72,7 +72,7 @@ Ranwid: "Here, look what I've got for you today! Take it take it!"`,
 					},
 				},
 				{
-					Name: "Ignore him",
+					Name: "ignore him",
 					Desc: "...",
 					Narrative: Narrative{
 						`Ranwid: "Aaaaagghh!! What a jerk you are sometimes!"
