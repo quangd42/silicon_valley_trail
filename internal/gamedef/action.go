@@ -75,9 +75,9 @@ func actionData() map[model.Action]ActionData {
 				teamSize := len(s.Party.Members)
 				return logic.Change{
 					Delta: model.Resources{
-						Cash:   -2000,
-						Coffee: -2 * teamSize,
-						Hype:   10,
+						Cash:   -700,
+						Coffee: -1 * teamSize,
+						Hype:   20,
 					},
 					AdvanceDay: true,
 				}

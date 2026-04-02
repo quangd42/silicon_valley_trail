@@ -382,8 +382,8 @@ func Test_playEvent(t *testing.T) {
 		if len(renderer.infos) != 1 || renderer.infos[0] != "Game saved." {
 			t.Fatalf("info messages = %#v, want [\"Game saved.\"]", renderer.infos)
 		}
-		if state.Resources.Cash != 10050 {
-			t.Fatalf("Cash = %d, want 10050", state.Resources.Cash)
+		if state.Resources.Cash != 7050 {
+			t.Fatalf("Cash = %d, want 7050", state.Resources.Cash)
 		}
 	})
 

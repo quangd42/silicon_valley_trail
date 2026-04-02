@@ -38,7 +38,7 @@ type Resources struct {
 
 func defaultResources() Resources {
 	return Resources{
-		Cash:    10_000,
+		Cash:    7_000,
 		Morale:  100,
 		Coffee:  30,
 		Hype:    10,

@@ -135,8 +135,9 @@ AI was used in the creation of the code in the following ways:
 
 - A research tool in place of Google: researching weather API providers, finding real Silicon Valley locations for the trail, and checking available features in the Go standard library.
 - General project planning and brainstorming.
-- Code reviewing, including suggesting edge cases for unit test coverage, and updating unit test assertion values.
-- General copy editing: checking spelling and grammar, as well as quickly editing UI labels as the core mechanics changed during development.
+- Improving unit test coverage (edge cases), and unit test stub generation.
+- Code reviewing.
+- General copy editing: checking spelling and grammar, event copy generating.
 
 ## Design Notes
 
@@ -193,6 +194,7 @@ Each field in `Resources` is a simple integer representing either a percentage (
 
 - Prefetch the next location's weather asynchronously so timeout handling (and fallback decisions) are done before the player advances to the next location, to
   ensure no blank screen.
+- One time events versus recurring events: some events should be removed from the pool, while some others can reoccur based on certain conditions.
 - Recruitment & trust mechanics. Recruits improve build velocity with diminishing returns. Trust and morale determine whether new team members stay. This also enables an alternative emotional ending `EndingAlone`, which occurs when the team size is 1 when the game is won (the team size is 2 at the start of the game: the player and buddy Pete).
 - Multiple game saves instead of just 1. Explore using SQLite instead of JSON as game save storage format.
 - General game balancing through action costs, weather effects, or new factors such as:

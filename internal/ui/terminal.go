@@ -14,10 +14,12 @@ import (
 	"golang.org/x/text/message"
 )
 
+const terminalWidth = 80
+
 var (
-	thickSep = []byte(strings.Repeat("=", 80))
-	thinSep  = []byte(strings.Repeat("-", 80))
-	alertSep = []byte(strings.Repeat("!", 80))
+	thickSep = []byte(strings.Repeat("=", terminalWidth))
+	thinSep  = []byte(strings.Repeat("-", terminalWidth))
+	alertSep = []byte(strings.Repeat("!", terminalWidth))
 )
 
 type Terminal struct {
@@ -47,14 +49,14 @@ func (t *Terminal) RenderIntro(v view.IntroView) {
 func (t *Terminal) RenderDayInfo(v view.DayView) {
 	t.thickSep()
 	t.fmt.Fprintf(t.out, "Day %d | %s\n", v.Day, v.Location.Name)
-	t.fmt.Fprintf(t.out, "%s\n", v.Location.Desc)
+	t.fmt.Fprintf(t.out, "%s\n", wrapText(v.Location.Desc, terminalWidth))
 	t.thickSep()
 	r := v.Resources
 	t.fmt.Fprintf(t.out, "Cash: $%d | Morale: %d%% | Coffee: %d\n", r.Cash, r.Morale, r.Coffee)
 	t.fmt.Fprintf(t.out, "Hype: %d%% | Product Readiness: %d%%\n", r.Hype, r.Product)
 	t.fmt.Fprintf(t.out, "Progress: %d%% to San Francisco\n", v.Progress)
 	t.thickSep()
-	t.fmt.Fprintf(t.out, "Weather: %s\n%s\n", v.Weather, v.WeatherImpact)
+	t.fmt.Fprintf(t.out, "Weather: %s\n%s\n", v.Weather, wrapText(v.WeatherImpact, terminalWidth))
 	t.thinSep()
 	t.out.WriteString("What will you do?\n")
 	t.thinSep()
@@ -168,7 +170,7 @@ func (t *Terminal) RenderEventResult(v view.EventResultView) {
 
 func (t *Terminal) RenderInfo(msg string) {
 	t.thinSep()
-	t.out.WriteString(msg)
+	t.out.WriteString(wrapText(msg, terminalWidth))
 	t.linefeed()
 	t.thinSep()
 	t.waitForEnter()
@@ -177,7 +179,7 @@ func (t *Terminal) RenderInfo(msg string) {
 
 func (t *Terminal) RenderInfoNoWait(msg string) {
 	t.thinSep()
-	t.out.WriteString(msg)
+	t.out.WriteString(wrapText(msg, terminalWidth))
 	t.linefeed()
 	t.thinSep()
 	t.out.Flush()
@@ -186,7 +188,7 @@ func (t *Terminal) RenderInfoNoWait(msg string) {
 func (t *Terminal) RenderEnding(v view.EndingView) {
 	t.thickSep()
 	t.renderNarrative(v.Narrative)
-	t.fmt.Fprintf(t.out, "(%s)\n", v.Explain)
+	t.fmt.Fprintf(t.out, "%s\n", wrapText("("+v.Explain+")", terminalWidth))
 	t.thickSep()
 	t.waitForEnterMsg("Game over. Press Enter to get back to main menu...")
 	t.ClearScreen()
@@ -198,15 +200,62 @@ func (t *Terminal) renderNarrative(v []string) {
 		return
 	}
 	for _, line := range v[:l-1] {
-		t.out.WriteString(line)
+		t.out.WriteString(wrapText(line, terminalWidth))
 		t.linefeed()
 		t.linefeed()
 		t.waitForEnter()
 		t.clearLine()
 	}
-	t.out.WriteString(v[l-1])
+	t.out.WriteString(wrapText(v[l-1], terminalWidth))
 	t.linefeed()
 	t.out.Flush()
+}
+
+func wrapText(text string, width int) string {
+	if text == "" || width <= 0 {
+		return text
+	}
+
+	var b strings.Builder
+	lines := strings.Split(text, "\n")
+
+	for li, line := range lines {
+		words := strings.Fields(line)
+		if len(words) == 0 {
+			if li > 0 {
+				b.WriteByte('\n')
+			}
+			continue
+		}
+
+		if li > 0 {
+			b.WriteByte('\n')
+		}
+
+		lineLen := 0
+		for i, word := range words {
+			wordLen := len(word)
+
+			if i == 0 {
+				b.WriteString(word)
+				lineLen = wordLen
+				continue
+			}
+
+			if lineLen+1+wordLen > width {
+				b.WriteByte('\n')
+				b.WriteString(word)
+				lineLen = wordLen
+				continue
+			}
+
+			b.WriteByte(' ')
+			b.WriteString(word)
+			lineLen += 1 + wordLen
+		}
+	}
+
+	return b.String()
 }
 
 func (t *Terminal) waitForEnterMsg(msg string) {

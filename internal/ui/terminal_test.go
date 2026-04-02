@@ -97,3 +97,13 @@ func TestRenderPrompt(t *testing.T) {
 		})
 	}
 }
+
+func TestWrapText(t *testing.T) {
+	t.Run("wraps long lines without breaking words", func(t *testing.T) {
+		got := wrapText("A startup advisor tells you to ship less, explain more, and stop naming every button after a feeling.", 40)
+		want := "A startup advisor tells you to ship\nless, explain more, and stop naming\nevery button after a feeling."
+		if got != want {
+			t.Fatalf("wrapText() = %q, want %q", got, want)
+		}
+	})
+}

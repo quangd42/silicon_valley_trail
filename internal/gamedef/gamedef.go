@@ -42,7 +42,7 @@ memories through dreams.
 Will you be able to impress the investors?`,
 		`Manage your resources wisely:
 * Cash    ($)   : Don’t run out. No cash = game over.
-* Morale  (%)   : Keep the team motivated.
+* Morale  (%)   : Motivated team build faster. Affects how effectively the team improves the product.
 * Coffee  (cups): Your startup fuel. 2 days without it = game over.
 * Product (%)   : How ready your product is. Directly affects your odds of getting signed.
 * Hype    (%)   : Public interest in your startup. Every 2 Hype = 1 Product.`,
