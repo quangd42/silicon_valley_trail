@@ -20,10 +20,9 @@
 <!--toc:end-->
 
 ## Demo
-
 (YouTube link, opens in new tab)
-<a href="https://www.youtube.com/watch?v=HWU_JS50m4I" target="_blank" rel="noopener noreferrer">
-<img src="https://img.youtube.com/vi/HWU_JS50m4I/maxresdefault.jpg" alt="Demo">
+<a href="https://youtu.be/9P_W4Z_FJ5M" target="_blank" rel="noopener noreferrer">
+<img src="https://img.youtube.com/vi/9P_W4Z_FJ5M/maxresdefault.jpg" alt="Silicon Valley Trail Demo">
 </a>
 
 ## Quick Start
