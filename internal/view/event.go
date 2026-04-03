@@ -23,7 +23,7 @@ type EventResultView struct {
 	Delta     model.Resources
 }
 
-func EventResult(eventIndex, choiceIndex int, er logic.EventResult, def gamedef.EventData) EventResultView {
+func EventResult(choiceIndex int, er logic.EventResult, def gamedef.EventData) EventResultView {
 	choiceDef := def.Choices[choiceIndex]
 	return EventResultView{
 		Narrative: choiceDef.Narrative,

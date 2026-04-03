@@ -47,7 +47,7 @@ func NewWeatherAPIService(apiKey, baseURL string, timeout time.Duration) *Weathe
 	}
 }
 
-func (s *WeatherAPIService) Current(ctx context.Context, loc model.Location) (model.WeatherKind, error) {
+func (s *WeatherAPIService) WeatherAt(ctx context.Context, loc model.Location) (model.WeatherKind, error) {
 	if cached, ok := s.cache[loc.ID]; ok {
 		return cached, nil
 	}

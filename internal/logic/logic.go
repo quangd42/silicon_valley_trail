@@ -141,7 +141,7 @@ func resolveFinalPitch(s *model.State, rng RNG) Ending {
 	finalPitchRoll := rng.IntN(100)
 	offerThreshold := (s.Resources.Product + s.Resources.Hype/2)
 	if finalPitchRoll < offerThreshold {
-		return EndingAlone
+		return EndingTogether
 	}
 	return EndingNoOffer
 }

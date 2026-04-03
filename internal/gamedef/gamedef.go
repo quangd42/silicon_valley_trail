@@ -12,7 +12,8 @@ type Definition struct {
 	Actions     map[model.Action]ActionData
 	ActionOrder []model.Action
 	Weather     map[model.WeatherKind]WeatherData
-	Events      []EventData
+	Events      map[string]EventData
+	EventIDs    []string
 	Endings     map[logic.Ending]EndingCopy
 }
 
@@ -27,6 +28,7 @@ func Load() *Definition {
 		ActionOrder: actionOrder(),
 		Weather:     weatherCopy(),
 		Events:      eventData(),
+		EventIDs:    eventIDs(),
 		Endings:     endingCopy(),
 	}
 }
@@ -35,17 +37,16 @@ func introCopy() Narrative {
 	return Narrative{
 		`Welcome to Silicon Valley Trail!
 
-You and your best bud Pete set out from your HQ in San Jose to San Francisco to attend a
-major investor meeting. Your product: a sleeping mask that lets people relive childhood
-memories through dreams.
+		You and your best bud Pete set out from your HQ in San Jose to San Francisco to attend a major investor meeting. Your product: a sleeping mask that lets people relive childhood memories through dreams.
 
-Will you be able to impress the investors?`,
+		Will you be able to impress the investors?`,
+		"Instructions:\n\nArrive at San Francisco with the best possible product - the better it is, the higher the chance you'll win over the investors in San Francisco.",
 		`Manage your resources wisely:
-* Cash    ($)   : Don’t run out. No cash = game over.
-* Morale  (%)   : Motivated team build faster. Affects how effectively the team improves the product.
-* Coffee  (cups): Your startup fuel. 2 days without it = game over.
-* Product (%)   : How ready your product is. Directly affects your odds of getting signed.
-* Hype    (%)   : Public interest in your startup. Every 2 Hype = 1 Product.`,
+		* Cash    ($): Don’t run out. No cash = game over.
+		* Morale  (%): Motivated team improve product faster.
+		* Coffee  (ct): Your startup fuel. 2 days without it = game over.
+		* Product (%): How ready your product is = your odds of getting signed.
+		* Hype    (%): Public interest in your startup. Every 2 Hype = 1 Product.`,
 	}
 }
 
@@ -67,22 +68,22 @@ func endingCopy() map[logic.Ending]EndingCopy {
 		},
 		logic.EndingNoOffer: {
 			Narrative: Narrative{
-				"Congratulations! You made it to San Francisco. After one last rushed coffee,\nyou step into the meeting room and face the investors.",
+				"Congratulations! You made it to San Francisco. After one last rushed coffee, you step into the meeting room and face the investors.",
 				"The pitch is solid, but the product is not. The investors don't seem convinced.",
 				"...",
 				"Maybe you got here too early.",
 			},
 			Explain: "The investors turned you down.",
 		},
-		logic.EndingAlone: {
+		logic.EndingTogether: {
 			Narrative: Narrative{
-				"Congratulations! You made it to San Francisco. After one last rushed coffee,\nyou step into the meeting room and face the investors.",
+				"Congratulations! You made it to San Francisco. After one last rushed coffee, you step into the meeting room and face the investors.",
 				"The presentation lands. Against the odds, you leave with a verbal commitment.",
 				"...",
 				"But what did it cost?",
 			},
 			Explain: "You won over the investors.",
 		},
-		logic.EndingTogether: {}, // To be added if we ever get there
+		logic.EndingAlone: {}, // To be added if we ever get there
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/quangd42/silicon_valley_trail/internal/logic"
 	"github.com/quangd42/silicon_valley_trail/internal/model"
 	"github.com/quangd42/silicon_valley_trail/internal/view"
+	"github.com/quangd42/silicon_valley_trail/internal/weather"
 )
 
 type scriptedRenderer struct {
@@ -15,6 +16,7 @@ type scriptedRenderer struct {
 	prompts          []model.PromptChoice
 	promptIndex      int
 	calls            []string
+	weathers         []model.WeatherKind
 	actionResults    []view.ActionResultView
 	eventInfos       []view.EventView
 	eventResults     []view.EventResultView
@@ -27,8 +29,9 @@ func (r *scriptedRenderer) RenderIntro(view.IntroView) {
 	r.calls = append(r.calls, "RenderIntro")
 }
 
-func (r *scriptedRenderer) RenderDayInfo(view.DayView) {
+func (r *scriptedRenderer) RenderDayInfo(v view.DayView) {
 	r.calls = append(r.calls, "RenderDayInfo")
+	r.weathers = append(r.weathers, v.Weather)
 }
 
 func (r *scriptedRenderer) RenderPrompt(view.PromptView) model.PromptChoice {
@@ -112,8 +115,9 @@ func testDefinition() *gamedef.Definition {
 		{ID: "san-jose", Name: "San Jose"},
 		{ID: "san-francisco", Name: "San Francisco"},
 	}
-	def.Events = []gamedef.EventData{
-		{
+	def.Events = map[string]gamedef.EventData{
+		"helpful-founder": {
+			ID:        "helpful-founder",
 			Name:      "Helpful founder",
 			Narrative: gamedef.Narrative{"A founder from the last accelerator batch spots you."},
 			Choices: []gamedef.EventChoiceData{
@@ -129,6 +133,7 @@ func testDefinition() *gamedef.Definition {
 			},
 		},
 	}
+	def.EventIDs = []string{"helpful-founder"}
 	return def
 }
 
@@ -143,9 +148,76 @@ func countCalls(calls []string, want string) int {
 }
 
 func Test_startGame(t *testing.T) {
+	t.Run("weather refreshes every day", func(t *testing.T) {
+		def := testDefinition()
+		state := model.NewState(
+			def.Route,
+			nil, // skipping event
+		)
+		state.Resources = model.Resources{
+			Cash:   20000,
+			Morale: 100,
+			Coffee: 300,
+		}
+
+		renderer := &scriptedRenderer{
+			tb: t,
+			prompts: []model.PromptChoice{
+				{Kind: model.ChoiceAction, Action: model.ActionRest},
+				{Kind: model.ChoiceAction, Action: model.ActionBuild},
+				{Kind: model.ChoiceAction, Action: model.ActionMarket},
+				{Kind: model.ChoiceControl, Control: model.ControlQuitToMenu},
+			},
+		}
+		prog := &Program{
+			renderer: renderer,
+			saver:    &stubSaver{},
+			rng:      &seqRNG{},
+			def:      def,
+			weather:  weather.NewMockService(),
+		}
+
+		prog.startGame(state, true)
+
+		wantCalls := []string{
+			"ClearScreen",
+			"RenderIntro",
+			"RenderDayInfo",
+			"RenderPrompt",
+			"RenderActionResult",
+			"RenderDayInfo",
+			"RenderPrompt",
+			"RenderActionResult",
+			"RenderDayInfo",
+			"RenderPrompt",
+			"RenderActionResult",
+			"RenderDayInfo",
+			"RenderPrompt",
+			"ClearScreen",
+		}
+		if !reflect.DeepEqual(renderer.calls, wantCalls) {
+			t.Fatalf("call order = %#v, want %#v", renderer.calls, wantCalls)
+		}
+		wantWeathers := []model.WeatherKind{
+			model.WeatherClear,
+			model.WeatherRainy,
+			model.WeatherFog,
+			model.WeatherCloudy,
+		}
+		if !reflect.DeepEqual(renderer.weathers, wantWeathers) {
+			t.Fatalf("weather renders = %#v, want %#v", renderer.weathers, wantWeathers)
+		}
+		if len(renderer.eventInfos) != 0 || len(renderer.eventResults) != 0 {
+			t.Fatalf("event renders = (%d info, %d result), want (0, 0)", len(renderer.eventInfos), len(renderer.eventResults))
+		}
+	})
+
 	t.Run("ending evaluates before arrival event", func(t *testing.T) {
 		def := testDefinition()
-		state := model.NewState(def.Route)
+		state := model.NewState(
+			def.Route,
+			nil, // skipping event
+		)
 		state.Resources = model.Resources{
 			Cash:   300,
 			Morale: 100,
@@ -159,7 +231,7 @@ func Test_startGame(t *testing.T) {
 				{Kind: model.ChoiceEvent, EventChoiceIndex: 0},
 			},
 		}
-		rng := &seqRNG{rolls: []int{0, 0, 99}}
+		rng := &seqRNG{}
 		prog := &Program{
 			renderer: renderer,
 			saver:    &stubSaver{},
@@ -195,7 +267,7 @@ func Test_startGame(t *testing.T) {
 
 	t.Run("surviving travel plays arrival event before the final ending", func(t *testing.T) {
 		def := testDefinition()
-		state := model.NewState(def.Route)
+		state := model.NewState(def.Route, def.EventIDs)
 		state.Resources = model.Resources{
 			Cash:    1000,
 			Morale:  100,
@@ -211,14 +283,16 @@ func Test_startGame(t *testing.T) {
 				{Kind: model.ChoiceEvent, EventChoiceIndex: 0},
 			},
 		}
-		rng := &seqRNG{rolls: []int{0, 0, 99}}
+		rng := &seqRNG{rolls: []int{
+			0,  // select event
+			99, // roll final pitch -> losing
+		}}
 		prog := &Program{
 			renderer: renderer,
 			saver:    &stubSaver{},
 			rng:      rng,
 			def:      def,
 		}
-
 		prog.startGame(state, false)
 
 		wantCalls := []string{
@@ -250,7 +324,10 @@ func Test_startGame(t *testing.T) {
 
 	t.Run("non-travel action does not trigger arrival event", func(t *testing.T) {
 		def := testDefinition()
-		state := model.NewState(def.Route)
+		state := model.NewState(
+			def.Route,
+			nil, // event not triggered
+		)
 
 		renderer := &scriptedRenderer{
 			tb: t,
@@ -279,9 +356,96 @@ func Test_startGame(t *testing.T) {
 		}
 	})
 
+	t.Run("saved game made during event will start at event", func(t *testing.T) {
+		def := testDefinition()
+		state := model.NewState(def.Route, def.EventIDs)
+		state.CurrentLocation = 1
+		state.EventPool.CurrentEvent = "helpful-founder"
+
+		renderer := &scriptedRenderer{
+			tb: t,
+			prompts: []model.PromptChoice{
+				{Kind: model.ChoiceEvent, EventChoiceIndex: 0},
+			},
+		}
+		saver := &stubSaver{}
+		prog := &Program{
+			renderer: renderer,
+			saver:    saver,
+			rng: &seqRNG{rolls: []int{
+				// IMPORTANT that we only need the roll for the final pitch here, not
+				// for event roll because event is saved and restored
+				99, // roll final pitch -> losing
+			}},
+			def: def,
+		}
+
+		prog.startGame(state, false)
+
+		if len(renderer.eventInfos) != 1 {
+			t.Fatalf("event info renders = %d, want 1", len(renderer.eventInfos))
+		}
+		if len(renderer.eventResults) != 1 {
+			t.Fatalf("event result renders = %d, want 1", len(renderer.eventResults))
+		}
+		if state.Resources.Cash != 7050 {
+			t.Fatalf("Cash = %d, want 7050", state.Resources.Cash)
+		}
+		if len(renderer.endings) != 1 {
+			t.Fatalf("ending renders = %d, want 1", len(renderer.endings))
+		}
+		if got := renderer.endings[0].Explain; got != def.Endings[logic.EndingNoOffer].Explain {
+			t.Fatalf("ending explain = %q, want %q", got, def.Endings[logic.EndingNoOffer].Explain)
+		}
+		if state.CurrentLocation != len(state.Route)-1 {
+			t.Fatalf("CurrentLocation = %d, want %d", state.CurrentLocation, len(state.Route)-1)
+		}
+	})
+
+	t.Run("play event skips gracefully when there is no more events to play", func(t *testing.T) {
+		def := testDefinition()
+		state := model.NewState(
+			def.Route,
+			nil, // event not triggered
+		)
+
+		renderer := &scriptedRenderer{
+			tb: t,
+			prompts: []model.PromptChoice{
+				{Kind: model.ChoiceAction, Action: model.ActionTravel},
+				{Kind: model.ChoiceControl, Control: model.ControlQuitToMenu},
+			},
+		}
+		prog := &Program{
+			renderer: renderer,
+			saver:    &stubSaver{},
+			rng: &seqRNG{rolls: []int{
+				0, // Roll final pitch roll -> winning
+			}},
+			def: def,
+		}
+
+		prog.startGame(state, false)
+
+		if len(renderer.eventInfos) != 0 {
+			t.Fatalf("event info renders = %d, want 0", len(renderer.eventInfos))
+		}
+		if len(renderer.eventResults) != 0 {
+			t.Fatalf("event result renders = %d, want 0", len(renderer.eventResults))
+		}
+		if len(renderer.endings) != 1 {
+			t.Fatalf("ending renders = %d, want 1", len(renderer.endings))
+		}
+		if got := renderer.endings[0].Explain; got != def.Endings[logic.EndingTogether].Explain {
+			t.Fatalf("ending explain = %q, want %q", got, def.Endings[logic.EndingTogether].Explain)
+		}
+		if state.CurrentLocation != len(state.Route)-1 {
+			t.Fatalf("CurrentLocation = %d, want %d", state.CurrentLocation, len(state.Route)-1)
+		}
+	})
 	t.Run("reaching the destination resolves the final ending path", func(t *testing.T) {
 		def := testDefinition()
-		state := model.NewState(def.Route)
+		state := model.NewState(def.Route, def.EventIDs)
 		state.Resources = model.Resources{
 			Cash:    1000,
 			Morale:  100,
@@ -294,9 +458,13 @@ func Test_startGame(t *testing.T) {
 			tb: t,
 			prompts: []model.PromptChoice{
 				{Kind: model.ChoiceAction, Action: model.ActionTravel},
+				{Kind: model.ChoiceEvent, EventChoiceIndex: 0},
 			},
 		}
-		rng := &seqRNG{rolls: []int{1, 99}}
+		rng := &seqRNG{rolls: []int{
+			0, // select event
+			0, // roll final pitch -> winning
+		}}
 		prog := &Program{
 			renderer: renderer,
 			saver:    &stubSaver{},
@@ -306,14 +474,14 @@ func Test_startGame(t *testing.T) {
 
 		prog.startGame(state, false)
 
-		if len(renderer.eventInfos) != 0 || len(renderer.eventResults) != 0 {
+		if len(renderer.eventInfos) != 1 || len(renderer.eventResults) != 1 {
 			t.Fatalf("unexpected event renders: (%d info, %d result)", len(renderer.eventInfos), len(renderer.eventResults))
 		}
 		if len(renderer.endings) != 1 {
 			t.Fatalf("ending renders = %d, want 1", len(renderer.endings))
 		}
-		if got := renderer.endings[0].Explain; got != def.Endings[logic.EndingNoOffer].Explain {
-			t.Fatalf("ending explain = %q, want %q", got, def.Endings[logic.EndingNoOffer].Explain)
+		if got := renderer.endings[0].Explain; got != def.Endings[logic.EndingTogether].Explain {
+			t.Fatalf("ending explain = %q, want %q", got, def.Endings[logic.EndingTogether].Explain)
 		}
 		if state.CurrentLocation != len(state.Route)-1 {
 			t.Fatalf("CurrentLocation = %d, want %d", state.CurrentLocation, len(state.Route)-1)
@@ -322,16 +490,20 @@ func Test_startGame(t *testing.T) {
 }
 
 func Test_playEvent(t *testing.T) {
-	t.Run("roll above event threshold skips the event entirely", func(t *testing.T) {
+	t.Run("in WeatherFog, roll above event threshold skips the event entirely", func(t *testing.T) {
 		def := testDefinition()
-		state := model.NewState(def.Route)
+		state := model.NewState(
+			def.Route,
+			nil, // skipping event
+		)
 		state.CurrentLocation = 1
+		state.Weather = model.WeatherFog
 
 		renderer := &scriptedRenderer{tb: t}
 		prog := &Program{
 			renderer: renderer,
 			saver:    &stubSaver{},
-			rng:      &seqRNG{rolls: []int{1}},
+			rng:      &seqRNG{rolls: []int{1}}, // Roll for WeatherFog
 			def:      def,
 		}
 
@@ -345,9 +517,42 @@ func Test_playEvent(t *testing.T) {
 		}
 	})
 
+	t.Run("event is taken out of the pool after being selected", func(t *testing.T) {
+		def := testDefinition()
+		state := model.NewState(def.Route, def.EventIDs)
+		state.CurrentLocation = 1
+		renderer := &scriptedRenderer{
+			tb: t,
+			prompts: []model.PromptChoice{
+				{Kind: model.ChoiceEvent, EventChoiceIndex: 0},
+			},
+		}
+		prog := &Program{
+			renderer: renderer,
+			saver:    &stubSaver{},
+			rng:      &seqRNG{rolls: []int{0}}, // Roll to select event
+			def:      def,
+		}
+
+		got := prog.playEvent(state)
+
+		if got {
+			t.Fatal("playEvent() = true, want false")
+		}
+		if len(renderer.eventInfos) != 1 {
+			t.Fatalf("unexpected renderer calls = %#v", renderer.calls)
+		}
+		if len(renderer.eventResults) != 1 {
+			t.Fatalf("event result renders = %d, want 1", len(renderer.eventResults))
+		}
+		if state.EventPool.Count != 0 {
+			t.Fatalf("event pool count = %d, want 0", state.EventPool.Count)
+		}
+	})
+
 	t.Run("save keeps the player inside the event loop", func(t *testing.T) {
 		def := testDefinition()
-		state := model.NewState(def.Route)
+		state := model.NewState(def.Route, def.EventIDs)
 		state.CurrentLocation = 1
 
 		renderer := &scriptedRenderer{
@@ -361,8 +566,10 @@ func Test_playEvent(t *testing.T) {
 		prog := &Program{
 			renderer: renderer,
 			saver:    saver,
-			rng:      &seqRNG{rolls: []int{0, 0}},
-			def:      def,
+			rng: &seqRNG{rolls: []int{
+				0, // Roll to select event
+			}},
+			def: def,
 		}
 
 		got := prog.playEvent(state)
@@ -389,7 +596,7 @@ func Test_playEvent(t *testing.T) {
 
 	t.Run("quit to menu exits the event loop immediately", func(t *testing.T) {
 		def := testDefinition()
-		state := model.NewState(def.Route)
+		state := model.NewState(def.Route, def.EventIDs)
 		state.CurrentLocation = 1
 
 		renderer := &scriptedRenderer{
@@ -401,8 +608,10 @@ func Test_playEvent(t *testing.T) {
 		prog := &Program{
 			renderer: renderer,
 			saver:    &stubSaver{},
-			rng:      &seqRNG{rolls: []int{0, 0}},
-			def:      def,
+			rng: &seqRNG{rolls: []int{
+				0, // Roll to select event
+			}},
+			def: def,
 		}
 
 		got := prog.playEvent(state)
@@ -425,7 +634,7 @@ func Test_playEvent(t *testing.T) {
 func Test_playTurn(t *testing.T) {
 	t.Run("save loops back to the day prompt", func(t *testing.T) {
 		def := testDefinition()
-		state := model.NewState(def.Route)
+		state := model.NewState(def.Route, def.EventIDs)
 
 		renderer := &scriptedRenderer{
 			tb: t,

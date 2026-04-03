@@ -13,7 +13,7 @@ type stubService struct {
 	err  error
 }
 
-func (s stubService) Current(context.Context, model.Location) (model.WeatherKind, error) {
+func (s stubService) WeatherAt(context.Context, model.Location) (model.WeatherKind, error) {
 	return s.kind, s.err
 }
 
@@ -32,8 +32,8 @@ func TestWeatherService(t *testing.T) {
 
 	t.Run("falls back to mock on remote error", func(t *testing.T) {
 		svc := &WeatherService{
-			mock:   stubService{kind: model.WeatherFog}.Current,
-			remote: stubService{err: errors.New("boom")}.Current,
+			mock:   stubService{kind: model.WeatherFog}.WeatherAt,
+			remote: stubService{err: errors.New("boom")}.WeatherAt,
 		}
 
 		got, err := svc.WeatherAt(context.Background(), model.Location{ID: "san-jose"})

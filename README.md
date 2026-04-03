@@ -35,6 +35,9 @@ Instructions:
 git clone git@github.com:quangd42/silicon_valley_trail.git svt && cd svt
 
 # Run with mock weather (default if no API key is set)
+go build .
+./silicon_valley_trail
+# Alternatively
 go run .
 
 # To run with live weather data, see Configuration below
@@ -197,6 +200,7 @@ Each field in `Resources` is a simple integer representing either a percentage (
 - One time events versus recurring events: some events should be removed from the pool, while some others can reoccur based on certain conditions.
 - Recruitment & trust mechanics. Recruits improve build velocity with diminishing returns. Trust and morale determine whether new team members stay. This also enables an alternative emotional ending `EndingAlone`, which occurs when the team size is 1 when the game is won (the team size is 2 at the start of the game: the player and buddy Pete).
 - Multiple game saves instead of just 1. Explore using SQLite instead of JSON as game save storage format.
+- Data schema versioning: make sure old game saves will still work if later versions have new state.
 - General game balancing through action costs, weather effects, or new factors such as:
   - Traveling cost that varies proportionally to distance between locations, populated by Google Maps API.
   - Inventory system, with items acquired through events. Items provide modifier effects and enable trading.

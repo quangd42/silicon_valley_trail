@@ -19,15 +19,15 @@ func NewWeatherService(api string, mock bool, timeout time.Duration) *WeatherSer
 	mockSvc := NewMockService()
 	if api == "" || mock {
 		return &WeatherService{
-			mock:     mockSvc.Current,
+			mock:     mockSvc.WeatherAt,
 			mockOnly: true,
 		}
 	}
 	remoteSvc := NewWeatherAPIService(api, "", timeout)
 	return &WeatherService{
 		mockOnly: false,
-		mock:     mockSvc.Current,
-		remote:   remoteSvc.Current,
+		mock:     mockSvc.WeatherAt,
+		remote:   remoteSvc.WeatherAt,
 	}
 }
 

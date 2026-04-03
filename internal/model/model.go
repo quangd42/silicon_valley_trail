@@ -1,5 +1,7 @@
 package model
 
+import "slices"
+
 type State struct {
 	Day              int         `json:"day"`
 	Route            []Location  `json:"route"`
@@ -8,15 +10,17 @@ type State struct {
 	Party            Party       `json:"party"`
 	Weather          WeatherKind `json:"weather"`
 	NoCoffeeDayCount int         `json:"no_coffee_day_count"`
+	EventPool        EventPool
 }
 
-func NewState(route []Location) *State {
+func NewState(route []Location, eventIDs []string) *State {
 	return &State{
 		Day:       0,
 		Route:     route,
 		Resources: defaultResources(),
 		Party:     defaultParty(),
 		Weather:   WeatherClear,
+		EventPool: NewEventPool(eventIDs),
 	}
 }
 
@@ -179,3 +183,29 @@ const (
 	ChoiceAction
 	ChoiceEvent
 )
+
+type EventPool struct {
+	Events []string `json:"events"`
+	Count  int      `json:"count"`
+	// Indicates which event is in play.
+	// An empty string indicates no event is in play.
+	CurrentEvent string `json:"current_event"`
+}
+
+func NewEventPool(eventIDs []string) EventPool {
+	events := slices.Clone(eventIDs)
+	return EventPool{
+		Events:       events,
+		Count:        len(events),
+		CurrentEvent: "",
+	}
+}
+
+func (ep *EventPool) SwapRemove(index int) string {
+	if index >= ep.Count {
+		panic("attempt to remove event out of bounds")
+	}
+	ep.Count--
+	ep.Events[index], ep.Events[ep.Count] = ep.Events[ep.Count], ep.Events[index]
+	return ep.Events[ep.Count]
+}

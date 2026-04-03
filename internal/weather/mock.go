@@ -23,7 +23,7 @@ func NewMockService() *MockService {
 	}
 }
 
-func (s *MockService) Current(_ context.Context, _ model.Location) (model.WeatherKind, error) {
+func (s *MockService) WeatherAt(_ context.Context, _ model.Location) (model.WeatherKind, error) {
 	out := s.data[s.index]
 	s.index++
 	if s.index == len(s.data) {

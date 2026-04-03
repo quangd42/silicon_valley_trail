@@ -82,6 +82,14 @@ func (p *Program) startGame(state *model.State, isNew bool) {
 	p.renderer.ClearScreen()
 	if isNew {
 		p.renderer.RenderIntro(view.IntroView(p.def.Intro))
+		p.refreshWeather(state)
+	}
+	// If there is an event in play (from loading game save),
+	// play the event first before going back to the turn loop
+	if state.EventPool.CurrentEvent != "" {
+		if p.playEvent(state) {
+			return
+		}
 	}
 	for state.CurrentLocation < len(state.Route)-1 {
 		turn := p.playTurn(state)
@@ -91,9 +99,9 @@ func (p *Program) startGame(state *model.State, isNew bool) {
 		if p.evaluateEnding(state) {
 			return
 		}
+		// This part of the loop counts for the new day
+		p.refreshWeather(state)
 		if turn.traveled {
-			// Event has a chance to play out after arriving at a new location
-			// (beginning of a new day/turn).
 			if p.playEvent(state) {
 				return
 			}
@@ -105,7 +113,7 @@ func (p *Program) startGame(state *model.State, isNew bool) {
 }
 
 func (p *Program) newGame() {
-	state := model.NewState(gamedef.DefaultRoute())
+	state := model.NewState(p.def.Route, p.def.EventIDs)
 	p.startGame(state, true)
 }
 
@@ -138,19 +146,47 @@ func (p *Program) quitGame() {
 	exit(0)
 }
 
-// Returns true when `QuitToMainMenu` is selected
+// Selects a random event from the current event pool, removes it from the pool, then
+// returns the event definition and `true`.
+// If there is no more event in the pool, returns empty event definition and `false`.
+func (p *Program) selectRandomEvent(state *model.State) (gamedef.EventData, bool) {
+	pool := &state.EventPool
+	if pool.Count == 0 {
+		return gamedef.EventData{}, false
+	}
+	index := p.rng.IntN(pool.Count)
+	eventID := pool.SwapRemove(index)
+	state.EventPool.CurrentEvent = eventID
+	eventDef, ok := p.def.Events[eventID]
+	if !ok {
+		return gamedef.EventData{}, false
+	}
+	return eventDef, true
+}
+
+// Returns `true` when `QuitToMenu` is selected, `false` otherwise.
 func (p *Program) playEvent(state *model.State) bool {
 	if state.CurrentLocation == 0 {
 		return false
 	}
-	// Events have a 1 in 3 chance of occuring
-	roll := p.rng.IntN(3)
-	if roll >= 1 {
-		return false
+	var eventDef gamedef.EventData
+	var ok bool
+	if state.EventPool.CurrentEvent != "" {
+		eventDef, ok = p.def.Events[state.EventPool.CurrentEvent]
+		if !ok {
+			// This might happen when the CurrentEvent value comes from a game save,
+			// but the event it refers to no longer exists in the authored event pool.
+			// We just silently ignore the event.
+			state.EventPool.CurrentEvent = ""
+			return false
+		}
+	} else {
+		eventDef, ok = p.selectRandomEvent(state)
+		if !ok {
+			// No more event in the pool
+			return false
+		}
 	}
-	events := p.def.Events
-	eventIndex := p.rng.IntN(len(events))
-	eventDef := events[eventIndex]
 	for {
 		p.renderer.RenderEventInfo(view.Event(eventDef))
 		choice := p.renderer.RenderPrompt(view.EventChoicePrompt(eventDef))
@@ -160,8 +196,9 @@ func (p *Program) playEvent(state *model.State) bool {
 				return true
 			}
 		case model.ChoiceEvent:
+			state.EventPool.CurrentEvent = ""
 			result := p.applyEventChoice(state, choice.EventChoiceIndex, eventDef)
-			p.renderer.RenderEventResult(view.EventResult(eventIndex, choice.EventChoiceIndex, result, eventDef))
+			p.renderer.RenderEventResult(view.EventResult(choice.EventChoiceIndex, result, eventDef))
 			return false
 		default:
 			panic("non event choice from event")
@@ -176,7 +213,6 @@ type TurnInfo struct {
 }
 
 func (p *Program) playTurn(state *model.State) TurnInfo {
-	p.refreshWeather(state)
 	for {
 		p.renderer.RenderDayInfo(view.Day(state, p.def))
 		choice := p.renderer.RenderPrompt(view.DayPrompt(p.def))
@@ -195,7 +231,7 @@ func (p *Program) playTurn(state *model.State) TurnInfo {
 	}
 }
 
-// Returns true when game losing conditions are met
+// Returns `true` when game losing conditions are met, `false` otherwise.
 func (p *Program) evaluateEnding(state *model.State) bool {
 	ending := logic.EvaluateEnding(state)
 	if ending != logic.EndingNone {
@@ -236,6 +272,7 @@ func (p *Program) applyEventChoice(state *model.State, choiceIndex int, def game
 	return logic.ApplyEventChoiceEffect(state, choice.Effect)
 }
 
+// Returns `true` when `QuitToMenu` control is selected, `false` otherwise.
 func (p *Program) applyControl(state *model.State, control model.Control) bool {
 	switch control {
 	case model.ControlSave:

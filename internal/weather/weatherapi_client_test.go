@@ -41,11 +41,11 @@ func TestWeatherAPIService_Current(t *testing.T) {
 			Longitude: -122.0353,
 		}
 
-		first, err := service.Current(context.Background(), loc)
+		first, err := service.WeatherAt(context.Background(), loc)
 		if err != nil {
 			t.Fatalf("first Current() error = %v, want nil", err)
 		}
-		second, err := service.Current(context.Background(), loc)
+		second, err := service.WeatherAt(context.Background(), loc)
 		if err != nil {
 			t.Fatalf("second Current() error = %v, want nil", err)
 		}
@@ -67,7 +67,7 @@ func TestWeatherAPIService_Current(t *testing.T) {
 	t.Run("returns missing location error", func(t *testing.T) {
 		service := NewWeatherAPIService("test-key", "http://example.invalid", 0)
 
-		got, err := service.Current(context.Background(), model.Location{})
+		got, err := service.WeatherAt(context.Background(), model.Location{})
 		if got != model.WeatherUnknown {
 			t.Fatalf("Current() weather = %v, want %v", got, model.WeatherUnknown)
 		}
@@ -83,7 +83,7 @@ func TestWeatherAPIService_Current(t *testing.T) {
 		defer server.Close()
 
 		service := NewWeatherAPIService("test-key", server.URL+"/v1/current.json?aqi=no", 0)
-		got, err := service.Current(context.Background(), model.Location{
+		got, err := service.WeatherAt(context.Background(), model.Location{
 			ID:        "san-jose",
 			Latitude:  37.3394,
 			Longitude: -121.8939,
@@ -104,7 +104,7 @@ func TestWeatherAPIService_Current(t *testing.T) {
 		defer server.Close()
 
 		service := NewWeatherAPIService("test-key", server.URL+"/v1/current.json?aqi=no", 0)
-		got, err := service.Current(context.Background(), model.Location{
+		got, err := service.WeatherAt(context.Background(), model.Location{
 			ID:        "san-jose",
 			Latitude:  37.3394,
 			Longitude: -121.8939,
@@ -126,7 +126,7 @@ func TestWeatherAPIService_Current(t *testing.T) {
 		defer server.Close()
 
 		service := NewWeatherAPIService("test-key", server.URL+"/v1/current.json?aqi=no", 10*time.Millisecond)
-		got, err := service.Current(context.Background(), model.Location{
+		got, err := service.WeatherAt(context.Background(), model.Location{
 			ID:        "san-jose",
 			Latitude:  37.3394,
 			Longitude: -121.8939,

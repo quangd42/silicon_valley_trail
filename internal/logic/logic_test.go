@@ -242,7 +242,7 @@ func TestResolveFinalPitch(t *testing.T) {
 				Resources: model.Resources{Product: 40, Hype: 20},
 			},
 			roll: 49,
-			want: EndingAlone,
+			want: EndingTogether,
 		},
 		{
 			name: "loses when roll equals threshold",
