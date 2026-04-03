@@ -133,7 +133,9 @@ func testDefinition() *gamedef.Definition {
 			},
 		},
 	}
-	def.EventIDs = []string{"helpful-founder"}
+	def.EventPools = model.EventPools{
+		Main: []string{"helpful-founder"},
+	}
 	return def
 }
 
@@ -152,7 +154,9 @@ func Test_startGame(t *testing.T) {
 		def := testDefinition()
 		state := model.NewState(
 			def.Route,
-			nil, // skipping event
+			// skipping event
+			nil,
+			nil,
 		)
 		state.Resources = model.Resources{
 			Cash:   20000,
@@ -216,7 +220,9 @@ func Test_startGame(t *testing.T) {
 		def := testDefinition()
 		state := model.NewState(
 			def.Route,
-			nil, // skipping event
+			// skipping event
+			nil,
+			nil,
 		)
 		state.Resources = model.Resources{
 			Cash:   300,
@@ -267,7 +273,7 @@ func Test_startGame(t *testing.T) {
 
 	t.Run("surviving travel plays arrival event before the final ending", func(t *testing.T) {
 		def := testDefinition()
-		state := model.NewState(def.Route, def.EventIDs)
+		state := model.NewState(def.Route, def.EventPools.Main, def.EventPools.Weather)
 		state.Resources = model.Resources{
 			Cash:    1000,
 			Morale:  100,
@@ -326,7 +332,9 @@ func Test_startGame(t *testing.T) {
 		def := testDefinition()
 		state := model.NewState(
 			def.Route,
-			nil, // event not triggered
+			// event not triggered
+			nil,
+			nil,
 		)
 
 		renderer := &scriptedRenderer{
@@ -358,9 +366,9 @@ func Test_startGame(t *testing.T) {
 
 	t.Run("saved game made during event will start at event", func(t *testing.T) {
 		def := testDefinition()
-		state := model.NewState(def.Route, def.EventIDs)
+		state := model.NewState(def.Route, def.EventPools.Main, def.EventPools.Weather)
 		state.CurrentLocation = 1
-		state.EventPool.CurrentEvent = "helpful-founder"
+		state.CurrentEvent = "helpful-founder"
 
 		renderer := &scriptedRenderer{
 			tb: t,
@@ -406,7 +414,9 @@ func Test_startGame(t *testing.T) {
 		def := testDefinition()
 		state := model.NewState(
 			def.Route,
-			nil, // event not triggered
+			// event not triggered
+			nil,
+			nil,
 		)
 
 		renderer := &scriptedRenderer{
@@ -445,7 +455,7 @@ func Test_startGame(t *testing.T) {
 	})
 	t.Run("reaching the destination resolves the final ending path", func(t *testing.T) {
 		def := testDefinition()
-		state := model.NewState(def.Route, def.EventIDs)
+		state := model.NewState(def.Route, def.EventPools.Main, def.EventPools.Weather)
 		state.Resources = model.Resources{
 			Cash:    1000,
 			Morale:  100,
@@ -487,6 +497,42 @@ func Test_startGame(t *testing.T) {
 			t.Fatalf("CurrentLocation = %d, want %d", state.CurrentLocation, len(state.Route)-1)
 		}
 	})
+
+	t.Run("new game seeds events from the injected definition", func(t *testing.T) {
+		def := testDefinition()
+
+		renderer := &scriptedRenderer{
+			tb: t,
+			prompts: []model.PromptChoice{
+				{Kind: model.ChoiceAction, Action: model.ActionTravel},
+				{Kind: model.ChoiceEvent, EventChoiceIndex: 0},
+			},
+		}
+		prog := &Program{
+			renderer: renderer,
+			saver:    &stubSaver{},
+			rng: &seqRNG{rolls: []int{
+				0,  // select event
+				99, // roll final pitch -> losing
+			}},
+			def: def,
+		}
+
+		prog.newGame()
+
+		if len(renderer.eventInfos) != 1 {
+			t.Fatalf("event info renders = %d, want 1", len(renderer.eventInfos))
+		}
+		if got := renderer.eventInfos[0].Name; got != "Helpful founder" {
+			t.Fatalf("event name = %q, want %q", got, "Helpful founder")
+		}
+		if len(renderer.eventResults) != 1 {
+			t.Fatalf("event result renders = %d, want 1", len(renderer.eventResults))
+		}
+		if got := renderer.eventResults[0].Delta.Cash; got != 50 {
+			t.Fatalf("event result cash delta = %d, want 50", got)
+		}
+	})
 }
 
 func Test_playEvent(t *testing.T) {
@@ -494,7 +540,9 @@ func Test_playEvent(t *testing.T) {
 		def := testDefinition()
 		state := model.NewState(
 			def.Route,
-			nil, // skipping event
+			// skipping event
+			nil,
+			nil,
 		)
 		state.CurrentLocation = 1
 		state.Weather = model.WeatherFog
@@ -519,7 +567,7 @@ func Test_playEvent(t *testing.T) {
 
 	t.Run("event is taken out of the pool after being selected", func(t *testing.T) {
 		def := testDefinition()
-		state := model.NewState(def.Route, def.EventIDs)
+		state := model.NewState(def.Route, def.EventPools.Main, def.EventPools.Weather)
 		state.CurrentLocation = 1
 		renderer := &scriptedRenderer{
 			tb: t,
@@ -545,14 +593,14 @@ func Test_playEvent(t *testing.T) {
 		if len(renderer.eventResults) != 1 {
 			t.Fatalf("event result renders = %d, want 1", len(renderer.eventResults))
 		}
-		if state.EventPool.Count != 0 {
-			t.Fatalf("event pool count = %d, want 0", state.EventPool.Count)
+		if len(state.EventPools.Main) != 0 {
+			t.Fatalf("event pool count = %d, want 0", len(state.EventPools.Main))
 		}
 	})
 
 	t.Run("save keeps the player inside the event loop", func(t *testing.T) {
 		def := testDefinition()
-		state := model.NewState(def.Route, def.EventIDs)
+		state := model.NewState(def.Route, def.EventPools.Main, def.EventPools.Weather)
 		state.CurrentLocation = 1
 
 		renderer := &scriptedRenderer{
@@ -596,7 +644,7 @@ func Test_playEvent(t *testing.T) {
 
 	t.Run("quit to menu exits the event loop immediately", func(t *testing.T) {
 		def := testDefinition()
-		state := model.NewState(def.Route, def.EventIDs)
+		state := model.NewState(def.Route, def.EventPools.Main, def.EventPools.Weather)
 		state.CurrentLocation = 1
 
 		renderer := &scriptedRenderer{
@@ -629,12 +677,113 @@ func Test_playEvent(t *testing.T) {
 			t.Fatalf("ClearScreen count = %d, want 1", renderer.clearScreenCount)
 		}
 	})
+
+	t.Run("weather-conditioned events are selected before the main pool", func(t *testing.T) {
+		def := testDefinition()
+		def.Events["clear-skies"] = gamedef.EventData{
+			ID:        "clear-skies",
+			Name:      "Clear Skies",
+			Narrative: gamedef.Narrative{"The sun is doing free marketing for you."},
+			Choices: []gamedef.EventChoiceData{
+				{
+					Name:      "Take the boost",
+					Narrative: gamedef.Narrative{"You lean into the moment."},
+					Effect: func(_ *model.State, _ logic.Context) logic.Change {
+						return logic.Change{
+							Delta: model.Resources{Hype: 3},
+						}
+					},
+				},
+			},
+			Conditions: gamedef.EventConditions{
+				Weather: model.WeatherClear,
+			},
+		}
+		def.EventPools = model.EventPools{
+			Main: []string{"helpful-founder"},
+			Weather: map[model.WeatherKind][]string{
+				model.WeatherClear: {"clear-skies"},
+			},
+		}
+		state := model.NewState(def.Route, def.EventPools.Main, def.EventPools.Weather)
+		state.CurrentLocation = 1
+		state.Weather = model.WeatherClear
+
+		renderer := &scriptedRenderer{
+			tb: t,
+			prompts: []model.PromptChoice{
+				{Kind: model.ChoiceEvent, EventChoiceIndex: 0},
+			},
+		}
+		prog := &Program{
+			renderer: renderer,
+			saver:    &stubSaver{},
+			rng:      &seqRNG{rolls: []int{0}},
+			def:      def,
+		}
+
+		got := prog.playEvent(state)
+
+		if got {
+			t.Fatal("playEvent() = true, want false")
+		}
+		if len(renderer.eventInfos) != 1 {
+			t.Fatalf("event info renders = %d, want 1", len(renderer.eventInfos))
+		}
+		if got := renderer.eventInfos[0].Name; got != "Clear Skies" {
+			t.Fatalf("event name = %q, want %q", got, "Clear Skies")
+		}
+		if len(state.EventPools.Main) != 1 || state.EventPools.Main[0] != "helpful-founder" {
+			t.Fatalf("main pool = %#v, want %#v", state.EventPools.Main, []string{"helpful-founder"})
+		}
+		if len(state.EventPools.Weather[model.WeatherClear]) != 0 {
+			t.Fatalf("weather pool count = %d, want 0", len(state.EventPools.Weather[model.WeatherClear]))
+		}
+	})
+
+	t.Run("falls back to the main pool when the current weather pool is empty", func(t *testing.T) {
+		def := testDefinition()
+		state := model.NewState(def.Route, def.EventPools.Main, def.EventPools.Weather)
+		state.CurrentLocation = 1
+		state.Weather = model.WeatherClear
+
+		renderer := &scriptedRenderer{
+			tb: t,
+			prompts: []model.PromptChoice{
+				{Kind: model.ChoiceEvent, EventChoiceIndex: 0},
+			},
+		}
+		prog := &Program{
+			renderer: renderer,
+			saver:    &stubSaver{},
+			rng:      &seqRNG{rolls: []int{0}},
+			def:      def,
+		}
+
+		got := prog.playEvent(state)
+
+		if got {
+			t.Fatal("playEvent() = true, want false")
+		}
+		if len(renderer.eventInfos) != 1 {
+			t.Fatalf("event info renders = %d, want 1", len(renderer.eventInfos))
+		}
+		if got := renderer.eventInfos[0].Name; got != "Helpful founder" {
+			t.Fatalf("event name = %q, want %q", got, "Helpful founder")
+		}
+		if len(state.EventPools.Main) != 0 {
+			t.Fatalf("main pool count = %d, want 0", len(state.EventPools.Main))
+		}
+		if len(state.EventPools.Weather[model.WeatherClear]) != 0 {
+			t.Fatalf("weather pool count = %d, want 0", len(state.EventPools.Weather[model.WeatherClear]))
+		}
+	})
 }
 
 func Test_playTurn(t *testing.T) {
 	t.Run("save loops back to the day prompt", func(t *testing.T) {
 		def := testDefinition()
-		state := model.NewState(def.Route, def.EventIDs)
+		state := model.NewState(def.Route, def.EventPools.Main, def.EventPools.Weather)
 
 		renderer := &scriptedRenderer{
 			tb: t,

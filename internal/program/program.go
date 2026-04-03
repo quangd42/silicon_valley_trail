@@ -86,7 +86,7 @@ func (p *Program) startGame(state *model.State, isNew bool) {
 	}
 	// If there is an event in play (from loading game save),
 	// play the event first before going back to the turn loop
-	if state.EventPool.CurrentEvent != "" {
+	if state.CurrentEvent != "" {
 		if p.playEvent(state) {
 			return
 		}
@@ -113,7 +113,11 @@ func (p *Program) startGame(state *model.State, isNew bool) {
 }
 
 func (p *Program) newGame() {
-	state := model.NewState(p.def.Route, p.def.EventIDs)
+	state := model.NewState(
+		p.def.Route,
+		p.def.EventPools.Main,
+		p.def.EventPools.Weather,
+	)
 	p.startGame(state, true)
 }
 
@@ -146,17 +150,36 @@ func (p *Program) quitGame() {
 	exit(0)
 }
 
-// Selects a random event from the current event pool, removes it from the pool, then
-// returns the event definition and `true`.
-// If there is no more event in the pool, returns empty event definition and `false`.
-func (p *Program) selectRandomEvent(state *model.State) (gamedef.EventData, bool) {
-	pool := &state.EventPool
-	if pool.Count == 0 {
-		return gamedef.EventData{}, false
+func swapRemove(src []string, index int) (updated []string, removed string) {
+	l := len(src)
+	if index >= l {
+		panic("attempt to remove event out of bounds")
 	}
-	index := p.rng.IntN(pool.Count)
-	eventID := pool.SwapRemove(index)
-	state.EventPool.CurrentEvent = eventID
+	removed = src[index]
+	src[index] = src[l-1]
+	updated = src[:l-1]
+	return
+}
+
+// Selects a random event from the one of current event pools, removes it from the
+// pool, then returns the event definition and `true`. Weather-conditioned event pools
+// are picked from first, then fall back to the main pool. If there is no more event
+// in the pool, returns empty event definition and `false`.
+func (p *Program) selectRandomEvent(state *model.State) (gamedef.EventData, bool) {
+	var eventID string
+	pools := &state.EventPools
+	pool := pools.Weather[state.Weather]
+	if len(pool) != 0 {
+		index := p.rng.IntN(len(pool))
+		pools.Weather[state.Weather], eventID = swapRemove(pool, index)
+	} else {
+		if len(pools.Main) == 0 {
+			return gamedef.EventData{}, false
+		}
+		index := p.rng.IntN(len(pools.Main))
+		pools.Main, eventID = swapRemove(pools.Main, index)
+	}
+	state.CurrentEvent = eventID
 	eventDef, ok := p.def.Events[eventID]
 	if !ok {
 		return gamedef.EventData{}, false
@@ -171,13 +194,13 @@ func (p *Program) playEvent(state *model.State) bool {
 	}
 	var eventDef gamedef.EventData
 	var ok bool
-	if state.EventPool.CurrentEvent != "" {
-		eventDef, ok = p.def.Events[state.EventPool.CurrentEvent]
+	if state.CurrentEvent != "" {
+		eventDef, ok = p.def.Events[state.CurrentEvent]
 		if !ok {
 			// This might happen when the CurrentEvent value comes from a game save,
 			// but the event it refers to no longer exists in the authored event pool.
 			// We just silently ignore the event.
-			state.EventPool.CurrentEvent = ""
+			state.CurrentEvent = ""
 			return false
 		}
 	} else {
@@ -196,7 +219,7 @@ func (p *Program) playEvent(state *model.State) bool {
 				return true
 			}
 		case model.ChoiceEvent:
-			state.EventPool.CurrentEvent = ""
+			state.CurrentEvent = ""
 			result := p.applyEventChoice(state, choice.EventChoiceIndex, eventDef)
 			p.renderer.RenderEventResult(view.EventResult(choice.EventChoiceIndex, result, eventDef))
 			return false

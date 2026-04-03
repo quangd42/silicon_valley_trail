@@ -13,7 +13,7 @@ type Definition struct {
 	ActionOrder []model.Action
 	Weather     map[model.WeatherKind]WeatherData
 	Events      map[string]EventData
-	EventIDs    []string
+	EventPools  model.EventPools
 	Endings     map[logic.Ending]EndingCopy
 }
 
@@ -28,7 +28,7 @@ func Load() *Definition {
 		ActionOrder: actionOrder(),
 		Weather:     weatherCopy(),
 		Events:      eventData(),
-		EventIDs:    eventIDs(),
+		EventPools:  makeEventPools(AllEvents),
 		Endings:     endingCopy(),
 	}
 }

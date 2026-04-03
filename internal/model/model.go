@@ -10,17 +10,28 @@ type State struct {
 	Party            Party       `json:"party"`
 	Weather          WeatherKind `json:"weather"`
 	NoCoffeeDayCount int         `json:"no_coffee_day_count"`
-	EventPool        EventPool
+	EventPools       EventPools  `json:"event_pools"`
+	// Indicates which event is in play.
+	// An empty string indicates no event is in play.
+	CurrentEvent string `json:"current_event"`
 }
 
-func NewState(route []Location, eventIDs []string) *State {
+func NewState(
+	route []Location,
+	mainPool []string,
+	weatherPools map[WeatherKind][]string,
+) *State {
+	pools := cloneEventPools(EventPools{
+		Main:    mainPool,
+		Weather: weatherPools,
+	})
 	return &State{
-		Day:       0,
-		Route:     route,
-		Resources: defaultResources(),
-		Party:     defaultParty(),
-		Weather:   WeatherClear,
-		EventPool: NewEventPool(eventIDs),
+		Day:        0,
+		Route:      route,
+		Resources:  defaultResources(),
+		Party:      defaultParty(),
+		Weather:    WeatherClear,
+		EventPools: pools,
 	}
 }
 
@@ -184,28 +195,22 @@ const (
 	ChoiceEvent
 )
 
-type EventPool struct {
-	Events []string `json:"events"`
-	Count  int      `json:"count"`
-	// Indicates which event is in play.
-	// An empty string indicates no event is in play.
-	CurrentEvent string `json:"current_event"`
+type EventPools struct {
+	Main    []string                 `json:"main"`
+	Weather map[WeatherKind][]string `json:"weather"`
 }
 
-func NewEventPool(eventIDs []string) EventPool {
-	events := slices.Clone(eventIDs)
-	return EventPool{
-		Events:       events,
-		Count:        len(events),
-		CurrentEvent: "",
+// cloneEventPools deep-copies event pool slices so each game state owns its pools.
+func cloneEventPools(src EventPools) EventPools {
+	out := EventPools{
+		Main: slices.Clone(src.Main),
 	}
-}
-
-func (ep *EventPool) SwapRemove(index int) string {
-	if index >= ep.Count {
-		panic("attempt to remove event out of bounds")
+	if src.Weather == nil {
+		return out
 	}
-	ep.Count--
-	ep.Events[index], ep.Events[ep.Count] = ep.Events[ep.Count], ep.Events[index]
-	return ep.Events[ep.Count]
+	out.Weather = make(map[WeatherKind][]string, len(src.Weather))
+	for weather, pool := range src.Weather {
+		out.Weather[weather] = slices.Clone(pool)
+	}
+	return out
 }

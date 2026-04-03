@@ -15,7 +15,7 @@ func TestJSONSaver(t *testing.T) {
 		savePath := filepath.Join(t.TempDir(), "save.json")
 		saver := NewJSONSaver(savePath)
 
-		state := model.NewState(nil, nil)
+		state := model.NewState(nil, nil, nil)
 		state.Day = 4
 		state.CurrentLocation = 3
 		state.Resources = model.Resources{
@@ -33,6 +33,15 @@ func TestJSONSaver(t *testing.T) {
 			},
 		}
 		state.Weather = model.WeatherFog
+		state.NoCoffeeDayCount = 2
+		state.EventPools = model.EventPools{
+			Main: []string{"helpful-founder"},
+			Weather: map[model.WeatherKind][]string{
+				model.WeatherClear: {"sunnydemo"},
+				model.WeatherRainy: {"rainpitch"},
+			},
+		}
+		state.CurrentEvent = "rainpitch"
 
 		if err := saver.Save(state); err != nil {
 			t.Fatalf("Save() error = %v", err)
@@ -78,7 +87,7 @@ func TestJSONSaver(t *testing.T) {
 		savePath := filepath.Join(t.TempDir(), "save.json")
 		saver := NewJSONSaver(savePath)
 
-		first := model.NewState(nil, nil)
+		first := model.NewState(nil, nil, nil)
 		first.Day = 1
 		first.CurrentLocation = 1
 		first.Resources = model.Resources{
@@ -88,8 +97,15 @@ func TestJSONSaver(t *testing.T) {
 			Hype:    15,
 			Product: 23,
 		}
+		first.EventPools = model.EventPools{
+			Main: []string{"first-event"},
+			Weather: map[model.WeatherKind][]string{
+				model.WeatherClear: {"clear-first"},
+			},
+		}
+		first.CurrentEvent = "first-event"
 
-		second := model.NewState(nil, nil)
+		second := model.NewState(nil, nil, nil)
 		second.Day = 8
 		second.CurrentLocation = 4
 		second.Resources = model.Resources{
@@ -100,6 +116,14 @@ func TestJSONSaver(t *testing.T) {
 			Product: 41,
 		}
 		second.Weather = model.WeatherRainy
+		second.NoCoffeeDayCount = 1
+		second.EventPools = model.EventPools{
+			Main: []string{"second-event"},
+			Weather: map[model.WeatherKind][]string{
+				model.WeatherRainy: {"rain-second"},
+			},
+		}
+		second.CurrentEvent = "rain-second"
 
 		if err := saver.Save(first); err != nil {
 			t.Fatalf("first Save() error = %v", err)

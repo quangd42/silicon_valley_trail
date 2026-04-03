@@ -13,10 +13,11 @@ type EventData struct {
 	Narrative    Narrative
 	ChoicesLabel string
 	Choices      []EventChoiceData
-	Conditions   struct {
-		Resources model.Resources
-		Weather   model.WeatherKind
-	}
+	Conditions   EventConditions
+}
+
+type EventConditions struct {
+	Weather model.WeatherKind
 }
 
 type EventChoiceData struct {
@@ -27,31 +28,44 @@ type EventChoiceData struct {
 }
 
 func eventData() map[string]EventData {
-	out := make(map[string]EventData, len(FullEventPool))
-	for _, ev := range FullEventPool {
+	out := make(map[string]EventData, len(AllEvents))
+	for _, ev := range AllEvents {
 		if ev.ID == "" {
 			panic(fmt.Sprintf("missing event id for %q", ev.Name))
 		}
+		// Build the full eventID <-> EventData map
 		if _, ok := out[ev.ID]; ok {
 			panic(fmt.Sprintf("duplicate event id: %s", ev.ID))
 		}
 		out[ev.ID] = ev
+
 	}
 	return out
 }
 
-func eventIDs() []string {
-	out := make([]string, len(FullEventPool))
-	for i, ev := range FullEventPool {
+// makeEventPools groups authored events into ID-only pools based on their conditions.
+func makeEventPools(events []EventData) model.EventPools {
+	mainPool := make([]string, 0, len(events))
+	weatherPools := make(map[model.WeatherKind][]string, model.WeatherKindCount)
+	for _, ev := range events {
 		if ev.ID == "" {
 			panic(fmt.Sprintf("missing event id for %q", ev.Name))
 		}
-		out[i] = ev.ID
+		// If event has weather condition, add it to weather filtered list
+		if ev.Conditions.Weather != model.WeatherUnknown {
+			weatherPools[ev.Conditions.Weather] = append(weatherPools[ev.Conditions.Weather], ev.ID)
+			continue
+		}
+		// otherwise add it to unconditional list
+		mainPool = append(mainPool, ev.ID)
 	}
-	return out
+	return model.EventPools{
+		Main:    mainPool,
+		Weather: weatherPools,
+	}
 }
 
-var FullEventPool = []EventData{
+var AllEvents = []EventData{
 	{
 		ID:   "ranwid",
 		Name: "We meet again!",
@@ -220,7 +234,7 @@ The room actually leans in.`,
 			},
 			{
 				Name: "turn it into a stunt.",
-				Desc: "-400 Cash, +12 Hype",
+				Desc: "-400 Cash, +8 Hype",
 				Narrative: Narrative{
 					`You spend fast on lights, pizza, and a ridiculous vinyl banner.
 
@@ -230,7 +244,7 @@ By midnight, half the warehouse knows your company name, and the other half is f
 					return logic.Change{
 						Delta: model.Resources{
 							Cash: -400,
-							Hype: +12,
+							Hype: +8,
 						},
 					}
 				},
@@ -1121,6 +1135,259 @@ Unfortunately, the internet rewards the founder who did not hesitate.`,
 					}
 				},
 			},
+		},
+	},
+	{
+		ID:   "rainpitch",
+		Name: "Rain-soaked pitch",
+		Narrative: Narrative{
+			"Rain batters the station roof in a steady metallic rhythm.",
+			"A handful of commuters huddle under the awning, half-bored and fully trapped.",
+			"This might be the perfect time to make a captive audience listen.",
+		},
+		ChoicesLabel: "You decide to...",
+		Choices: []EventChoiceData{
+			{
+				Name: "pitch to the stranded crowd.",
+				Desc: "-2 Morale, +8 Hype",
+				Narrative: Narrative{
+					`You launch into a loud, impassioned pitch while rainwater drips off your sleeves.
+
+A few people laugh. A few clap. One person records the whole thing.`,
+					`By afternoon the clip is circulating with captions ranging from "visionary" to "deeply concerning."
+
+Either way, people are talking.`,
+				},
+				Effect: func(_ *model.State, _ logic.Context) logic.Change {
+					return logic.Change{
+						Delta: model.Resources{
+							Morale: -2,
+							Hype:   +8,
+						},
+					}
+				},
+			},
+			{
+				Name: "wait it out and keep spirits up.",
+				Desc: "+4 Morale",
+				Narrative: Narrative{
+					`You decide not to force it.
+
+Instead, you pass around warm drinks, crack a few jokes, and let everyone complain about the weather in peace.`,
+					`No buzz, no spectacle, but the team seems grateful for the restraint.`,
+				},
+				Effect: func(_ *model.State, _ logic.Context) logic.Change {
+					return logic.Change{
+						Delta: model.Resources{
+							Morale: +4,
+						},
+					}
+				},
+			},
+		},
+		Conditions: EventConditions{
+			Weather: model.WeatherRainy,
+		},
+	},
+	{
+		ID:   "ponchopromo",
+		Name: "Poncho campaign",
+		Narrative: Narrative{
+			"The rain has reduced the city to umbrellas, puddles, and regret.",
+			"A street vendor nearby is selling cheap transparent ponchos in bulk.",
+			"You realize they could be turned into walking ad space almost instantly.",
+		},
+		ChoicesLabel: "You choose to...",
+		Choices: []EventChoiceData{
+			{
+				Name: "buy ponchos and stamp the logo on them.",
+				Desc: "-120 Cash, +8 Hype",
+				Narrative: Narrative{
+					`You buy a stack, mark them up, and hand them out to drenched pedestrians.
+
+Most accept without hesitation.`,
+					`Soon your logo is sloshing through intersections all over downtown.
+
+Crude. Wet. Effective.`,
+				},
+				Effect: func(_ *model.State, _ logic.Context) logic.Change {
+					return logic.Change{
+						Delta: model.Resources{
+							Cash: -120,
+							Hype: +8,
+						},
+					}
+				},
+			},
+			{
+				Name: "save the cash.",
+				Desc: "+1 Morale",
+				Narrative: Narrative{
+					`You decide against spending on soggy improvisation.
+
+The team nods approvingly at this rare display of restraint.`,
+				},
+				Effect: func(_ *model.State, _ logic.Context) logic.Change {
+					return logic.Change{
+						Delta: model.Resources{
+							Morale: +1,
+						},
+					}
+				},
+			},
+		},
+		Conditions: EventConditions{
+			Weather: model.WeatherRainy,
+		},
+	},
+	{
+		ID:   "gooddaymarketing",
+		Name: "A good day for marketing",
+		Narrative: Narrative{
+			"The sky is clear, the sidewalks are busy, and people seem suspiciously open to optimism.",
+			"Sunlight hits your branding mockups just right.",
+			"It feels like one of those rare days where marketing might actually work.",
+		},
+		ChoicesLabel: "You decide to...",
+		Choices: []EventChoiceData{
+			{
+				Name: "go all-in on street marketing.",
+				Desc: "+8 Hype",
+				Narrative: Narrative{
+					`You seize the moment.
+
+Flyers move. Conversations spark. Passersby stop long enough to actually listen.`,
+					`By the end of the push, the team is sweaty, sun-struck, and strangely triumphant.
+
+The campaign lands harder than usual.`,
+				},
+				Effect: func(_ *model.State, _ logic.Context) logic.Change {
+					return logic.Change{
+						Delta: model.Resources{
+							Hype: +8,
+						},
+					}
+				},
+			},
+			{
+				Name: "let the opportunity pass.",
+				Desc: "-4 Morale",
+				Narrative: Narrative{
+					`You decide not to commit.
+
+The weather stays perfect. The crowds stay thick. The moment passes with insulting grace.`,
+					`Nobody says much, but the team can feel it: this was a miss.`,
+				},
+				Effect: func(_ *model.State, _ logic.Context) logic.Change {
+					return logic.Change{
+						Delta: model.Resources{
+							Morale: -4,
+						},
+					}
+				},
+			},
+		},
+		Conditions: EventConditions{
+			Weather: model.WeatherClear,
+		},
+	},
+	{
+		ID:   "sunnydemo",
+		Name: "Sidewalk demo day",
+		Narrative: Narrative{
+			"The weather is so pleasant that people are lingering outdoors for no reason at all.",
+			"A patch of open pavement nearby looks almost staged.",
+			"You could run a live demo here and now.",
+		},
+		ChoicesLabel: "You decide to...",
+		Choices: []EventChoiceData{
+			{
+				Name: "set up a live demo booth.",
+				Desc: "-1 Coffee, +6 Hype",
+				Narrative: Narrative{
+					`You throw together a shamelessly improvised demo area.
+
+The sunshine does half the work. Curiosity does the rest.`,
+					`A respectable crowd gathers, and for once your team looks like it belongs in public.`,
+				},
+				Effect: func(_ *model.State, _ logic.Context) logic.Change {
+					return logic.Change{
+						Delta: model.Resources{
+							Coffee: -1,
+							Hype:   +6,
+						},
+					}
+				},
+			},
+			{
+				Name: "take the pleasant day as a morale break.",
+				Desc: "+5 Morale",
+				Narrative: Narrative{
+					`You call a brief unofficial pause.
+
+The team sprawls out in the sun, decompresses, and remembers that life contains things other than deadlines.`,
+					`No campaign metrics move, but the mood improves immediately.`,
+				},
+				Effect: func(_ *model.State, _ logic.Context) logic.Change {
+					return logic.Change{
+						Delta: model.Resources{
+							Morale: +5,
+						},
+					}
+				},
+			},
+		},
+		Conditions: EventConditions{
+			Weather: model.WeatherClear,
+		},
+	},
+	{
+		ID:   "dramaticsky",
+		Name: "Dramatic sky advantage",
+		Narrative: Narrative{
+			"The clouds have parted just enough to make the skyline look theatrical.",
+			"Everything appears more ambitious in this light, including you.",
+			"Someone suggests taking promo photos immediately.",
+		},
+		ChoicesLabel: "You decide to...",
+		Choices: []EventChoiceData{
+			{
+				Name: "stage an impromptu photoshoot.",
+				Desc: "-60 Cash, +3 Hype",
+				Narrative: Narrative{
+					`You pay a freelancer on the spot and start posing like a team with direction.
+
+The lighting is absurdly flattering.`,
+					`By evening, the photos are everywhere and your company looks at least 40% more legitimate.`,
+				},
+				Effect: func(_ *model.State, _ logic.Context) logic.Change {
+					return logic.Change{
+						Delta: model.Resources{
+							Cash: -60,
+							Hype: +3,
+						},
+					}
+				},
+			},
+			{
+				Name: "skip it and keep moving.",
+				Desc: "+1 Morale",
+				Narrative: Narrative{
+					`You resist the urge to turn weather into strategy.
+
+The team appreciates not having to perform brand enthusiasm on command.`,
+				},
+				Effect: func(_ *model.State, _ logic.Context) logic.Change {
+					return logic.Change{
+						Delta: model.Resources{
+							Morale: +1,
+						},
+					}
+				},
+			},
+		},
+		Conditions: EventConditions{
+			Weather: model.WeatherClear,
 		},
 	},
 }
