@@ -178,7 +178,7 @@ func Test_startGame(t *testing.T) {
 			saver:    &stubSaver{},
 			rng:      &seqRNG{},
 			def:      def,
-			weather:  weather.NewMockService(),
+			weather:  weather.DefaultMockService(),
 		}
 
 		prog.startGame(state, true)
@@ -290,8 +290,7 @@ func Test_startGame(t *testing.T) {
 			},
 		}
 		rng := &seqRNG{rolls: []int{
-			0,  // select event
-			99, // roll final pitch -> losing
+			0, // select event
 		}}
 		prog := &Program{
 			renderer: renderer,
@@ -320,11 +319,11 @@ func Test_startGame(t *testing.T) {
 		if len(renderer.endings) != 1 {
 			t.Fatalf("ending renders = %d, want 1", len(renderer.endings))
 		}
-		if got := renderer.endings[0].Explain; got != def.Endings[logic.EndingNoOffer].Explain {
-			t.Fatalf("ending explain = %q, want %q", got, def.Endings[logic.EndingNoOffer].Explain)
+		if got := renderer.endings[0].Explain; got != def.Endings[logic.EndingNoProductFit].Explain {
+			t.Fatalf("ending explain = %q, want %q", got, def.Endings[logic.EndingNoProductFit].Explain)
 		}
-		if state.Resources.Cash != 750 {
-			t.Fatalf("Cash = %d, want 750", state.Resources.Cash)
+		if state.Resources.Cash != 700 {
+			t.Fatalf("Cash = %d, want 700", state.Resources.Cash)
 		}
 	})
 
@@ -380,12 +379,8 @@ func Test_startGame(t *testing.T) {
 		prog := &Program{
 			renderer: renderer,
 			saver:    saver,
-			rng: &seqRNG{rolls: []int{
-				// IMPORTANT that we only need the roll for the final pitch here, not
-				// for event roll because event is saved and restored
-				99, // roll final pitch -> losing
-			}},
-			def: def,
+			rng:      &seqRNG{},
+			def:      def,
 		}
 
 		prog.startGame(state, false)
@@ -396,14 +391,14 @@ func Test_startGame(t *testing.T) {
 		if len(renderer.eventResults) != 1 {
 			t.Fatalf("event result renders = %d, want 1", len(renderer.eventResults))
 		}
-		if state.Resources.Cash != 7050 {
-			t.Fatalf("Cash = %d, want 7050", state.Resources.Cash)
+		if state.Resources.Cash != 6050 {
+			t.Fatalf("Cash = %d, want 6050", state.Resources.Cash)
 		}
 		if len(renderer.endings) != 1 {
 			t.Fatalf("ending renders = %d, want 1", len(renderer.endings))
 		}
-		if got := renderer.endings[0].Explain; got != def.Endings[logic.EndingNoOffer].Explain {
-			t.Fatalf("ending explain = %q, want %q", got, def.Endings[logic.EndingNoOffer].Explain)
+		if got := renderer.endings[0].Explain; got != def.Endings[logic.EndingNoProductFit].Explain {
+			t.Fatalf("ending explain = %q, want %q", got, def.Endings[logic.EndingNoProductFit].Explain)
 		}
 		if state.CurrentLocation != len(state.Route)-1 {
 			t.Fatalf("CurrentLocation = %d, want %d", state.CurrentLocation, len(state.Route)-1)
@@ -429,10 +424,8 @@ func Test_startGame(t *testing.T) {
 		prog := &Program{
 			renderer: renderer,
 			saver:    &stubSaver{},
-			rng: &seqRNG{rolls: []int{
-				0, // Roll final pitch roll -> winning
-			}},
-			def: def,
+			rng:      &seqRNG{},
+			def:      def,
 		}
 
 		prog.startGame(state, false)
@@ -446,8 +439,8 @@ func Test_startGame(t *testing.T) {
 		if len(renderer.endings) != 1 {
 			t.Fatalf("ending renders = %d, want 1", len(renderer.endings))
 		}
-		if got := renderer.endings[0].Explain; got != def.Endings[logic.EndingTogether].Explain {
-			t.Fatalf("ending explain = %q, want %q", got, def.Endings[logic.EndingTogether].Explain)
+		if got := renderer.endings[0].Explain; got != def.Endings[logic.EndingNoProductFit].Explain {
+			t.Fatalf("ending explain = %q, want %q", got, def.Endings[logic.EndingNoProductFit].Explain)
 		}
 		if state.CurrentLocation != len(state.Route)-1 {
 			t.Fatalf("CurrentLocation = %d, want %d", state.CurrentLocation, len(state.Route)-1)
@@ -473,7 +466,6 @@ func Test_startGame(t *testing.T) {
 		}
 		rng := &seqRNG{rolls: []int{
 			0, // select event
-			0, // roll final pitch -> winning
 		}}
 		prog := &Program{
 			renderer: renderer,
@@ -490,8 +482,8 @@ func Test_startGame(t *testing.T) {
 		if len(renderer.endings) != 1 {
 			t.Fatalf("ending renders = %d, want 1", len(renderer.endings))
 		}
-		if got := renderer.endings[0].Explain; got != def.Endings[logic.EndingTogether].Explain {
-			t.Fatalf("ending explain = %q, want %q", got, def.Endings[logic.EndingTogether].Explain)
+		if got := renderer.endings[0].Explain; got != def.Endings[logic.EndingNoProductFit].Explain {
+			t.Fatalf("ending explain = %q, want %q", got, def.Endings[logic.EndingNoProductFit].Explain)
 		}
 		if state.CurrentLocation != len(state.Route)-1 {
 			t.Fatalf("CurrentLocation = %d, want %d", state.CurrentLocation, len(state.Route)-1)
@@ -512,8 +504,7 @@ func Test_startGame(t *testing.T) {
 			renderer: renderer,
 			saver:    &stubSaver{},
 			rng: &seqRNG{rolls: []int{
-				0,  // select event
-				99, // roll final pitch -> losing
+				0, // select event
 			}},
 			def: def,
 		}
@@ -637,8 +628,8 @@ func Test_playEvent(t *testing.T) {
 		if len(renderer.infos) != 1 || renderer.infos[0] != "Game saved." {
 			t.Fatalf("info messages = %#v, want [\"Game saved.\"]", renderer.infos)
 		}
-		if state.Resources.Cash != 7050 {
-			t.Fatalf("Cash = %d, want 7050", state.Resources.Cash)
+		if state.Resources.Cash != 6050 {
+			t.Fatalf("Cash = %d, want 6050", state.Resources.Cash)
 		}
 	})
 

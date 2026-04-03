@@ -213,52 +213,40 @@ func TestEvaluateEnding(t *testing.T) {
 	}
 }
 
-type Rand struct {
-	roll int
-}
-
-func (r Rand) IntN(_ int) int {
-	return r.roll
-}
-
-func TestResolveFinalPitch(t *testing.T) {
+func TestResolveArrivalEnding(t *testing.T) {
 	tests := []struct {
 		name  string
 		state model.State
-		roll  int
 		want  Ending
 	}{
 		{
-			name: "loses when threshold is zero",
+			name: "returns no product fit below the first threshold",
 			state: model.State{
 				Resources: model.Resources{Product: 0, Hype: 0},
 			},
-			roll: 0,
-			want: EndingNoOffer,
+			want: EndingNoProductFit,
 		},
 		{
-			name: "wins when roll is below threshold",
+			name: "returns momentum between thresholds",
 			state: model.State{
 				Resources: model.Resources{Product: 40, Hype: 20},
 			},
-			roll: 49,
-			want: EndingTogether,
+			want: EndingMomentum,
 		},
 		{
-			name: "loses when roll equals threshold",
+			name: "returns perfection at the top threshold",
 			state: model.State{
-				Resources: model.Resources{Product: 40, Hype: 20},
+				Resources: model.Resources{Product: 70, Hype: 40},
 			},
-			roll: 50,
-			want: EndingNoOffer,
+			want: EndingPerfection,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got := resolveFinalPitch(&tc.state, Rand{roll: tc.roll})
+			got := resolveArrivalEnding(&tc.state)
 			if got != tc.want {
-				t.Fatalf("resolveFinalPitch() = %v, want %v", got, tc.want)
+				t.Fatalf("resolveArrivalEnding() = %v, want %v", got, tc.want)
 			}
 		})
 	}

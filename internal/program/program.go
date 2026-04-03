@@ -108,7 +108,7 @@ func (p *Program) startGame(state *model.State, isNew bool) {
 		}
 	}
 
-	ending := logic.ResolveFinalEnding(state, p.rng)
+	ending := logic.ResolveFinalEnding(state)
 	p.renderer.RenderEnding(view.Ending(ending, p.def))
 }
 

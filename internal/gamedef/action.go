@@ -29,9 +29,9 @@ func actionData() map[model.Action]ActionData {
 				teamSize := len(s.Party.Members)
 				return logic.Change{
 					Delta: model.Resources{
-						Cash:   -150 * teamSize,
+						Cash:   -175 * teamSize,
 						Coffee: -2 * teamSize,
-						Morale: -5,
+						Morale: -6,
 					},
 					MoveLocation: 1,
 					AdvanceDay:   true,
@@ -45,9 +45,9 @@ func actionData() map[model.Action]ActionData {
 				teamSize := len(s.Party.Members)
 				return logic.Change{
 					Delta: model.Resources{
-						Cash:   -300 * teamSize,
-						Coffee: 12,
-						Morale: 20,
+						Cash:   -225 * teamSize,
+						Coffee: 9,
+						Morale: 18,
 					},
 					AdvanceDay: true,
 				}
@@ -60,24 +60,24 @@ func actionData() map[model.Action]ActionData {
 				teamSize := len(s.Party.Members)
 				return logic.Change{
 					Delta: model.Resources{
-						Coffee:  -4 * teamSize,
-						Product: 3 * teamSize * s.Resources.Morale / 100,
-						Morale:  -15,
+						Coffee:  -3 * teamSize,
+						Product: 4 * teamSize * s.Resources.Morale / 100,
+						Morale:  -18,
 					},
 					AdvanceDay: true,
 				}
 			},
 		},
 		model.ActionMarket: {
-			Desc:      "Marketing push (increase hype, costs cash and coffee)",
+			Desc:      "Marketing push (increase hype, costs a lot of cash and some coffee)",
 			Narrative: []string{"You launch a marketing campaign...\n\nEvery \"debate\" on X is about your product."},
 			Effect: func(s *model.State, _ logic.Context) logic.Change {
 				teamSize := len(s.Party.Members)
 				return logic.Change{
 					Delta: model.Resources{
-						Cash:   -700,
+						Cash:   -850,
 						Coffee: -1 * teamSize,
-						Hype:   20,
+						Hype:   18,
 					},
 					AdvanceDay: true,
 				}

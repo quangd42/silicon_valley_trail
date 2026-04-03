@@ -16,7 +16,7 @@ type WeatherService struct {
 }
 
 func NewWeatherService(api string, mock bool, timeout time.Duration) *WeatherService {
-	mockSvc := NewMockService()
+	mockSvc := DefaultMockService()
 	if api == "" || mock {
 		return &WeatherService{
 			mock:     mockSvc.WeatherAt,

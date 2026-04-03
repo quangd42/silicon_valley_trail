@@ -26,7 +26,7 @@ func NewState(
 		Weather: weatherPools,
 	})
 	return &State{
-		Day:        0,
+		Day:        1,
 		Route:      route,
 		Resources:  defaultResources(),
 		Party:      defaultParty(),
@@ -53,9 +53,9 @@ type Resources struct {
 
 func defaultResources() Resources {
 	return Resources{
-		Cash:    7_000,
+		Cash:    6_000,
 		Morale:  100,
-		Coffee:  30,
+		Coffee:  26,
 		Hype:    10,
 		Product: 20,
 	}

@@ -11,16 +11,20 @@ type MockService struct {
 	index int
 }
 
-func NewMockService() *MockService {
+func NewMockService(data []model.WeatherKind) *MockService {
 	return &MockService{
-		data: []model.WeatherKind{
-			model.WeatherClear,
-			model.WeatherRainy,
-			model.WeatherFog,
-			model.WeatherCloudy,
-		},
+		data:  data,
 		index: 0,
 	}
+}
+
+func DefaultMockService() *MockService {
+	return NewMockService([]model.WeatherKind{
+		model.WeatherClear,
+		model.WeatherRainy,
+		model.WeatherFog,
+		model.WeatherCloudy,
+	})
 }
 
 func (s *MockService) WeatherAt(_ context.Context, _ model.Location) (model.WeatherKind, error) {

@@ -70,7 +70,7 @@ func DefaultRoute() []model.Location {
 		{
 			ID:        "san-francisco",
 			Name:      "San Francisco",
-			Desc:      "Final pitch territory.",
+			Desc:      "Final meeting territory.",
 			Latitude:  37.775,
 			Longitude: -122.4183,
 		},

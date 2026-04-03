@@ -250,17 +250,18 @@ By midnight, half the warehouse knows your company name, and the other half is f
 				},
 			},
 			{
-				Name: "pass.",
-				Desc: "-2 Hype",
+				Name: "sell the slot to another founder.",
+				Desc: "+180 Cash, -4 Hype",
 				Narrative: Narrative{
-					`You decide chaos can be somebody else's growth strategy tonight.
+					`You decide chaos can be somebody else's growth strategy tonight and flip the opening to a founder who needs it more.
 
-Unfortunately, somebody else takes the slot and gets the buzz instead.`,
+You walk away with a little cash and a little less relevance.`,
 				},
 				Effect: func(_ *model.State, _ logic.Context) logic.Change {
 					return logic.Change{
 						Delta: model.Resources{
-							Hype: -2,
+							Cash: +180,
+							Hype: -4,
 						},
 					}
 				},
@@ -312,7 +313,7 @@ It is messy. It is loud. It works.`,
 			},
 			{
 				Name: "rent the nap pod.",
-				Desc: "-80 Cash, +12 Morale, +3 Coffee",
+				Desc: "-80 Cash, +12 Morale, +4 Coffee",
 				Narrative: Narrative{
 					`You pay for the pod, collapse instantly, and wake up to a paper cup of terrible coffee on
 the floor outside.
@@ -324,7 +325,7 @@ You have never felt richer.`,
 						Delta: model.Resources{
 							Cash:   -80,
 							Morale: +12,
-							Coffee: +3,
+							Coffee: +4,
 						},
 					}
 				},
@@ -379,7 +380,7 @@ They tell you.`,
 			},
 			{
 				Name: "sell the reservation.",
-				Desc: "+120 Cash, -6 Morale",
+				Desc: "+180 Cash, -6 Morale",
 				Narrative: Narrative{
 					`Another founder offers cash on the spot for the table.
 
@@ -388,7 +389,7 @@ You take the deal, then spend the walk convincing yourself this was "capital eff
 				Effect: func(_ *model.State, _ logic.Context) logic.Change {
 					return logic.Change{
 						Delta: model.Resources{
-							Cash:   +120,
+							Cash:   +180,
 							Morale: -6,
 						},
 					}
@@ -502,17 +503,18 @@ By the time you leave, your team feels human again.`,
 				},
 			},
 			{
-				Name: "pretend you have another meeting.",
-				Desc: "-2 Morale",
+				Name: "record the sponsor read instead.",
+				Desc: "+140 Cash, -4 Hype",
 				Narrative: Narrative{
-					`You nod politely, check a calendar notification that does not exist, and keep walking.
+					`The host pivots instantly and asks if you want the paid sponsor slot instead.
 
-The move works, but only if you do not count your own opinion.`,
+You read copy for a productivity app you do not believe in and leave with enough money for another day on the road.`,
 				},
 				Effect: func(_ *model.State, _ logic.Context) logic.Change {
 					return logic.Change{
 						Delta: model.Resources{
-							Morale: -2,
+							Cash: +140,
+							Hype: -4,
 						},
 					}
 				},
@@ -546,7 +548,7 @@ The move works, but only if you do not count your own opinion.`,
 			},
 			{
 				Name: "raid the kitchen and reset.",
-				Desc: "-70 Cash, +3 Coffee, +6 Morale",
+				Desc: "-70 Cash, +4 Coffee, +6 Morale",
 				Narrative: Narrative{
 					`You overpay for the pass, then absolutely get your money's worth in stale cold brew and suspicious granola.`,
 					`Pete looks human again by the time you leave.`,
@@ -555,7 +557,7 @@ The move works, but only if you do not count your own opinion.`,
 					return logic.Change{
 						Delta: model.Resources{
 							Cash:   -70,
-							Coffee: +3,
+							Coffee: +4,
 							Morale: +6,
 						},
 					}
@@ -643,7 +645,7 @@ By the time you check back in, three other founders have filled the silence.`,
 		Choices: []EventChoiceData{
 			{
 				Name: "grab the energy drinks.",
-				Desc: "+3 Coffee, -3 Morale",
+				Desc: "+4 Coffee, -4 Morale",
 				Narrative: Narrative{
 					`The cans are warm, aggressively branded, and almost certainly bad for you.`,
 					`They still get the job done.`,
@@ -651,8 +653,8 @@ By the time you check back in, three other founders have filled the silence.`,
 				Effect: func(_ *model.State, _ logic.Context) logic.Change {
 					return logic.Change{
 						Delta: model.Resources{
-							Coffee: +3,
-							Morale: -3,
+							Coffee: +4,
+							Morale: -4,
 						},
 					}
 				},
@@ -702,7 +704,7 @@ By the time you check back in, three other founders have filled the silence.`,
 		Choices: []EventChoiceData{
 			{
 				Name: "fill out the application.",
-				Desc: "-7 Morale, +150 Cash",
+				Desc: "-7 Morale, +220 Cash",
 				Narrative: Narrative{
 					`You spend an annoying amount of time describing your "impact story" to a form field that clearly hates you.`,
 					`Against the odds, the grant comes through.`,
@@ -711,7 +713,7 @@ By the time you check back in, three other founders have filled the silence.`,
 					return logic.Change{
 						Delta: model.Resources{
 							Morale: -7,
-							Cash:   +150,
+							Cash:   +220,
 						},
 					}
 				},
@@ -835,7 +837,7 @@ Someone else seizes the moment before the queue starts moving again.`,
 			},
 			{
 				Name: "a little moving money.",
-				Desc: "-4 Morale, +100 Cash",
+				Desc: "-4 Morale, +180 Cash",
 				Narrative: Narrative{
 					`You help carry dead desktops and sad plants down three flights of stairs for cash and a handshake neither side enjoys.`,
 					`Useful money, bleak vibes.`,
@@ -844,7 +846,7 @@ Someone else seizes the moment before the queue starts moving again.`,
 					return logic.Change{
 						Delta: model.Resources{
 							Morale: -4,
-							Cash:   +100,
+							Cash:   +180,
 						},
 					}
 				},
@@ -1012,7 +1014,7 @@ It is sensible, but it still feels like chickening out.`,
 			},
 			{
 				Name: "buy snacks and wait it out.",
-				Desc: "-50 Cash, +2 Coffee, +6 Morale",
+				Desc: "-50 Cash, +3 Coffee, +6 Morale",
 				Narrative: Narrative{
 					`You spend a little, split the snacks with Pete, and let yourselves be people for ten whole minutes.`,
 				},
@@ -1020,7 +1022,7 @@ It is sensible, but it still feels like chickening out.`,
 					return logic.Change{
 						Delta: model.Resources{
 							Cash:   -50,
-							Coffee: +2,
+							Coffee: +3,
 							Morale: +6,
 						},
 					}
@@ -1120,17 +1122,18 @@ It is sensible, but it still feels like chickening out.`,
 				},
 			},
 			{
-				Name: "leave it for someone else.",
-				Desc: "-2 Hype",
+				Name: "trade the setup for espresso vouchers.",
+				Desc: "+3 Coffee, -4 Hype",
 				Narrative: Narrative{
-					`You decide the internet can survive one less video of your face today.
+					`You let another team use the lighting setup first in exchange for a fistful of cafe vouchers and a promise not to tag you.
 
-Unfortunately, the internet rewards the founder who did not hesitate.`,
+You lose the moment, but not the caffeine.`,
 				},
 				Effect: func(_ *model.State, _ logic.Context) logic.Change {
 					return logic.Change{
 						Delta: model.Resources{
-							Hype: -2,
+							Coffee: +3,
+							Hype:   -4,
 						},
 					}
 				},

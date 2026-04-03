@@ -122,8 +122,9 @@ const (
 	EndingNone Ending = iota
 	EndingNoCoffee
 	EndingNoCash
-	EndingNoOffer
-	EndingTogether
+	EndingNoProductFit
+	EndingMomentum
+	EndingPerfection
 	EndingAlone
 )
 
@@ -137,19 +138,22 @@ func EvaluateEnding(s *model.State) Ending {
 	return EndingNone
 }
 
-func resolveFinalPitch(s *model.State, rng RNG) Ending {
-	finalPitchRoll := rng.IntN(100)
-	offerThreshold := (s.Resources.Product + s.Resources.Hype/2)
-	if finalPitchRoll < offerThreshold {
-		return EndingTogether
+func resolveArrivalEnding(s *model.State) Ending {
+	score := s.Resources.Product + s.Resources.Hype/2
+	switch {
+	case score < 50:
+		return EndingNoProductFit
+	case score < 90:
+		return EndingMomentum
+	default:
+		return EndingPerfection
 	}
-	return EndingNoOffer
 }
 
-func ResolveFinalEnding(s *model.State, rng RNG) Ending {
+func ResolveFinalEnding(s *model.State) Ending {
 	ending := EvaluateEnding(s)
 	if ending != EndingNone {
 		return ending
 	}
-	return resolveFinalPitch(s, rng)
+	return resolveArrivalEnding(s)
 }

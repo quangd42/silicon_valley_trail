@@ -15,6 +15,7 @@
   - [Live weather data](#live-weather-data)
   - [Data models](#data-models)
   - [Tradeoffs / If I had more time:](#tradeoffs-if-i-had-more-time)
+- [Example Interaction](#example-interaction)
 
 <!--toc:end-->
 
@@ -101,7 +102,7 @@ Explanation:
 - `program` refreshes weather for the current location, renders the day state, collects player input, and resolves the chosen action.
 - After each travel action, `program` triggers exactly one arrival event before the next day continues.
 - Event selection prefers weather-specific event pools first, then falls back to the general pool, and removes events from the pool once used.
-- `program` evaluates losing conditions with `logic`, and resolves the final pitch once the route is complete.
+- `program` evaluates losing conditions with `logic`, and resolves the final meeting ending tier once the route is complete.
 - `program` uses `save` to persist and restore the full game state, including any in-progress event.
 
 `model` defines the persisted game state, including resources, route progress, remaining event pools, and the current in-progress event if a save happens mid-event.
@@ -147,7 +148,17 @@ AI was used in the creation of the code in the following ways:
 
 ### Game loop & balance approach
 
-The core resource is `Product Readiness`, with `Hype` acting as a secondary boost in the final pitch. When the player reaches the final destination, the game rolls a number in [0-100); if the roll is below `Product Readiness + Hype/2`, the player wins, otherwise they lose. The main pressure of the game comes from choosing the right series of actions to improve these odds while managing resources to avoid losing conditions, such as running out of cash or going without coffee for too long. The game is balanced around this pressure.
+The core tension is survival versus polish. Reaching San Francisco ends the run. `Product Readiness` and `Hype` no longer gate whether the player "wins"; instead they determine the flavor of the final investor meeting through the score `Product Readiness + Hype/2`.
+
+Ending thresholds:
+
+- `< 50`: `No Product Fit`
+- `50-89`: `Momentum`
+- `>= 90`: `Perfection`
+
+Cash depletion and going too long without coffee are the only hard failure states. The game is balanced so that travel and optional progress actions both consume meaningful resources, and arrival events sometimes let the player trade morale or hype back into cash or coffee when survival gets tight.
+
+An earlier draft used a probabilistic final pitch roll. I removed that in the current version to align more literally with the assignment wording that reaching the destination should be the success condition.
 
 Each game loop is a day:
 
@@ -161,11 +172,12 @@ Current actions:
 - Travel to the next location (costs cash, coffee, and morale)
 - Rest and recover (restore morale and coffee, costs cash)
 - Work on product (increase product readiness, costs coffee and morale)
-- Marketing push (increase hype, costs cash and coffee)
+- Marketing push (increase hype, costs a lot of cash and some coffee)
 
-Win / lose conditions:
+End conditions:
 
-- Win by reaching San Francisco and resolving the final pitch
+- Reach San Francisco to complete the run
+- Final meeting flavor is based on `Product Readiness + Hype/2`
 - Lose if cash reaches zero
 - Lose if coffee stays at zero for too long
 
@@ -211,3 +223,177 @@ Each field in `Resources` is a simple integer representing either a percentage (
 - General game balancing through action costs, weather effects, or new factors such as:
   - Traveling cost that varies proportionally to distance between locations, populated by Google Maps API.
   - Inventory system, with items acquired through events. Items provide modifier effects and enable trading.
+
+## Example Interaction
+
+Sample run with mock weather, trimmed for length. Weather and event draws vary between runs.
+Chosen choice in this sample run is highlighted for legibility.
+
+```text
+$ go run .
+================================================================================
+SILICON VALLEY TRAIL - Main Menu
+================================================================================
+1. **New Game**
+2. Load Game
+3. Quit Game
+
+Enter choice (1-3): 1
+
+Welcome to Silicon Valley Trail!
+
+You and your best bud Pete set out from your HQ in San Jose to San Francisco for
+a high-stakes investor meeting. Your product: a sleeping mask that lets people
+relive childhood memories through dreams.
+
+Reach San Francisco before the company runs out of runway.
+
+Press Enter to begin your journey!
+
+================================================================================
+Day 1 | San Jose
+Garage HQ and the start of the run.
+================================================================================
+Cash: $6,000 | Morale: 100% | Coffee: 26
+Hype: 10% | Product Readiness: 20%
+Progress: 10% to San Francisco
+================================================================================
+Weather: Clear
+You feel productive and ready to go.
+(1.Travel+  3.Build+)
+--------------------------------------------------------------------------------
+What will you do?
+--------------------------------------------------------------------------------
+1. **Travel to the next location (costs cash, coffee, and morale)**
+2. Rest and recover (restore morale and coffee, costs cash)
+3. Work on product (increase product readiness, costs coffee and morale)
+4. Marketing push (increase hype, costs a lot of cash and some coffee)
+5. Save Game
+6. Quit to Menu
+
+Enter choice (1-6): 1
+...
+Arrived at Santa Clara!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+EVENT: Rain-soaked pitch
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Rain batters the station roof in a steady metallic rhythm.
+...
+You decide to...
+1. pitch to the stranded crowd. (-2 Morale, +8 Hype)
+2. **wait it out and keep spirits up. (+4 Morale)**
+3. Save Game
+4. Quit to Menu
+
+Enter choice (1-4): 2
+...
+
+================================================================================
+Day 2 | Santa Clara
+Corporate campuses and investor drive-bys.
+================================================================================
+Cash: $5,650 | Morale: 100% | Coffee: 22
+Hype: 10% | Product Readiness: 20%
+Progress: 20% to San Francisco
+================================================================================
+Weather: Rainy
+It's miserable out there.
+(1.Travel-  4.Marketing-)
+--------------------------------------------------------------------------------
+What will you do?
+--------------------------------------------------------------------------------
+1. Travel to the next location (costs cash, coffee, and morale)
+2. Rest and recover (restore morale and coffee, costs cash)
+3. **Work on product (increase product readiness, costs coffee and morale)**
+4. Marketing push (increase hype, costs a lot of cash and some coffee)
+5. Save Game
+6. Quit to Menu
+
+Enter choice (1-6): 3
+--------------------------------------------------------------------------------
+You take on the next item on the roadmap...
+
+You're happy with the result, but everyone is tired...
+--------------------------------------------------------------------------------
+(Coffee -6. Morale -18%. Product +8%. Press Enter to continue...)
+
+================================================================================
+Day 3 | Santa Clara
+Corporate campuses and investor drive-bys.
+================================================================================
+Cash: $5,650 | Morale: 82% | Coffee: 16
+Hype: 10% | Product Readiness: 28%
+Progress: 20% to San Francisco
+================================================================================
+Weather: Fog
+You feel unsure about the future.
+(1.Travel-  3.Build-)
+--------------------------------------------------------------------------------
+What will you do?
+--------------------------------------------------------------------------------
+1. Travel to the next location (costs cash, coffee, and morale)
+2. Rest and recover (restore morale and coffee, costs cash)
+3. Work on product (increase product readiness, costs coffee and morale)
+4. Marketing push (increase hype, costs a lot of cash and some coffee)
+5. **Save Game**
+6. Quit to Menu
+
+Enter choice (1-6): 5
+--------------------------------------------------------------------------------
+Game saved.
+--------------------------------------------------------------------------------
+
+================================================================================
+Day 3 | Santa Clara
+Corporate campuses and investor drive-bys.
+================================================================================
+Cash: $5,650 | Morale: 82% | Coffee: 16
+Hype: 10% | Product Readiness: 28%
+Progress: 20% to San Francisco
+================================================================================
+Weather: Fog
+You feel unsure about the future.
+(1.Travel-  3.Build-)
+--------------------------------------------------------------------------------
+What will you do?
+--------------------------------------------------------------------------------
+1. Travel to the next location (costs cash, coffee, and morale)
+2. Rest and recover (restore morale and coffee, costs cash)
+3. Work on product (increase product readiness, costs coffee and morale)
+4. Marketing push (increase hype, costs a lot of cash and some coffee)
+5. Save Game
+6. **Quit to Menu**
+
+Enter choice (1-6): 6
+
+================================================================================
+SILICON VALLEY TRAIL - Main Menu
+================================================================================
+1. New Game
+2. **Load Game**
+3. Quit Game
+
+Enter choice (1-3): 2
+
+================================================================================
+Day 3 | Santa Clara
+Corporate campuses and investor drive-bys.
+================================================================================
+Cash: $5,650 | Morale: 82% | Coffee: 16
+Hype: 10% | Product Readiness: 28%
+Progress: 20% to San Francisco
+================================================================================
+Weather: Fog
+You feel unsure about the future.
+(1.Travel-  3.Build-)
+--------------------------------------------------------------------------------
+What will you do?
+--------------------------------------------------------------------------------
+1. Travel to the next location (costs cash, coffee, and morale)
+2. Rest and recover (restore morale and coffee, costs cash)
+3. Work on product (increase product readiness, costs coffee and morale)
+4. Marketing push (increase hype, costs a lot of cash and some coffee)
+5. Save Game
+6. Quit to Menu
+```

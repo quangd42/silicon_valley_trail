@@ -42,7 +42,7 @@ func TestRenderPrompt(t *testing.T) {
 				Action: model.ActionMarket,
 			},
 			wantSubstrings: []string{
-				"4. Marketing push (increase hype, costs cash and coffee)\n",
+				"4. Marketing push (increase hype, costs a lot of cash and some coffee)\n",
 				"Enter choice (1-6): ",
 			},
 		},
