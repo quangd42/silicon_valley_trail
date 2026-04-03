@@ -21,7 +21,10 @@
 
 ## Demo
 
-- Screen recording / hosted demo: `TODO`
+(YouTube link, opens in new tab)
+<a href="https://www.youtube.com/watch?v=HWU_JS50m4I" target="_blank" rel="noopener noreferrer">
+<img src="https://img.youtube.com/vi/HWU_JS50m4I/maxresdefault.jpg" alt="Demo">
+</a>
 
 ## Quick Start
 
@@ -140,15 +143,15 @@ AI was used in the creation of the code in the following ways:
 
 - A research tool in place of Google: researching weather API providers, finding real Silicon Valley locations for the trail, and checking available features in the Go standard library.
 - General project planning and brainstorming.
-- Improving unit test coverage (edge cases), and unit test stub generation.
+- Improving unit test coverage (edge cases).
 - Code reviewing.
-- General copy editing: checking spelling and grammar, event copy generating.
+- General copy editing: generating event copy, checking spelling and grammar.
 
 ## Design Notes
 
 ### Game loop & balance approach
 
-The core tension is survival versus polish. Reaching San Francisco ends the run. `Product Readiness` and `Hype` no longer gate whether the player "wins"; instead they determine the flavor of the final investor meeting through the score `Product Readiness + Hype/2`.
+The core tension is survival versus polish. Reaching San Francisco ends the run. `Product Readiness` and `Hype` determine the flavor of the final investor meeting through the score `Product Readiness + Hype/2`.
 
 Ending thresholds:
 
@@ -158,7 +161,7 @@ Ending thresholds:
 
 Cash depletion and going too long without coffee are the only hard failure states. The game is balanced so that travel and optional progress actions both consume meaningful resources, and arrival events sometimes let the player trade morale or hype back into cash or coffee when survival gets tight.
 
-An earlier draft used a probabilistic final pitch roll. I removed that in the current version to align more literally with the assignment wording that reaching the destination should be the success condition.
+In an earlier iteration, the final meeting used the score as a probability threshold to determine whether the player received a favorable ending. That created a stronger gameplay incentive to improve the score, but I removed it in the current version to align more literally with the assignment wording that reaching the destination should be the success condition.
 
 Each game loop is a day:
 
@@ -194,6 +197,8 @@ After each travel action, the game resolves one arrival event. The event system 
 
 Weather data is fetched live from `WeatherAPI.com`. A mock fallback is provided for offline play and local development. The mock fallback is also used when a live request fails.
 
+The live weather client also caches weather per location for the duration of a game session, including across multiple days spent in the same city. That is an intentionally design choice: within the scope of a short run, the weather at one location is unlikely to change enough to justify extra API calls, and caching keeps gameplay more stable. This could be changed to refresh on a per-day basis or use a time-based cache.
+
 ### Data models
 
 `State` holds game state data: `Day`, `Route`, `CurrentLocation`, `Resources`, `Party`, `Weather`, `NoCoffeeDayCount`, `EventPools`, and `CurrentEvent`. In each game session, `State` is modified as the game progresses. When the game is saved, data from `State` is serialized to disk as a JSON file. When a saved game is loaded, `State` is populated from a JSON file on disk.
@@ -213,8 +218,7 @@ Each field in `Resources` is a simple integer representing either a percentage (
 
 ### Tradeoffs / If I had more time:
 
-- Prefetch the next location's weather asynchronously so timeout handling (and fallback decisions) are done before the player advances to the next location, to
-  ensure no blank screen.
+- Prefetch the next location's weather asynchronously so timeout handling (and fallback decisions) are done before the player advances to the next location, to ensure no blank screen.
 - One time events versus recurring events: some events should be removed from the pool, while some others can reoccur based on certain conditions.
 - Recruitment & trust mechanics. Recruits could improve build velocity with diminishing returns. Trust and morale could determine whether new team members stay. This could also enable an alternative emotional ending `EndingAlone`, which would occur if the team size is 1 when the game is won (the team size currently starts at 2: the player and buddy Pete).
 - Multiple game saves instead of just 1. Explore using SQLite instead of JSON as game save storage format.
@@ -222,12 +226,13 @@ Each field in `Resources` is a simple integer representing either a percentage (
 - Weather API issues can be logged. Currently it falls back to mock provider silently.
 - General game balancing through action costs, weather effects, or new factors such as:
   - Traveling cost that varies proportionally to distance between locations, populated by Google Maps API.
+  - Add more RNGs to the event outcomes.
   - Inventory system, with items acquired through events. Items provide modifier effects and enable trading.
 
 ## Example Interaction
 
 Sample run with mock weather, trimmed for length. Weather and event draws vary between runs.
-Chosen choice in this sample run is highlighted for legibility.
+The chosen choice of each day this sample run is marked with `**choice**` for legibility.
 
 ```text
 $ go run .
